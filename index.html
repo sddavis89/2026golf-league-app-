@@ -396,14 +396,27 @@ function goToStep(step) {
 }
 
 // ── WEEK LIST ─────────────────────────────────────────────────────
+function getWeekStatus(weekDate) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const wDate = new Date(weekDate+'T12:00:00');
+  const dayAfter = new Date(wDate); dayAfter.setDate(dayAfter.getDate()+1);
+  if (today < wDate) return 'upcoming';
+  if (today < dayAfter) return 'active';
+  return 'completed';
+}
+
 function renderWeekList() {
   const el = document.getElementById('week-list');
-  const active = S.weeks.filter(w => w.status==='active'||w.status==='completed');
-  if (!active.length) { el.innerHTML = '<div class="empty">No weeks available yet</div>'; return; }
-  el.innerHTML = active.map(w => {
+  const available = S.weeks.filter(w => {
+    const status = getWeekStatus(w.date);
+    return status === 'completed' || status === 'active';
+  });
+  if (!available.length) { el.innerHTML = '<div class="empty">No weeks available yet</div>'; return; }
+  el.innerHTML = available.map(w => {
     const d = new Date(w.date+'T12:00:00');
     const dateStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    const badge = w.status==='active' ? '<span class="week-badge">This Week</span>' : '';
+    const status = getWeekStatus(w.date);
+    const badge = status==='active' ? '<span class="week-badge">This Week</span>' : '';
     return `<button class="week-btn" onclick="selectWeek(${w.id})">
       <span>Week ${w.week_number} ${badge}</span>
       <span class="wk-date">${dateStr}</span>
@@ -961,7 +974,8 @@ function renderSchedule() {
   el.innerHTML = weeks.map(w => {
     const d = new Date(w.date+'T12:00:00');
     const dateStr = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    const badge = w.status==='active'?'<span class="week-badge" style="margin-left:8px;">This Week</span>':'';
+    const status = getWeekStatus(w.date);
+    const badge = status==='active'?'<span class="week-badge" style="margin-left:8px;">This Week</span>':'';
     const isSpecial = w.week_number>=14;
     
     if (isSpecial) {
@@ -975,7 +989,7 @@ function renderSchedule() {
     // Get matchups for this week from the schedule data we know
     const matchupData = getScheduleMatchups(w.week_number);
     
-    return `<details style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;margin-bottom:10px;overflow:hidden;" ${w.status==='active'?'open':''}>
+    return `<details style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;margin-bottom:10px;overflow:hidden;" ${getWeekStatus(w.date)==='active'?'open':''}>
       <summary style="padding:13px 16px;cursor:pointer;font-weight:600;color:var(--cream);display:flex;align-items:center;justify-content:space-between;list-style:none;">
         <span>Week ${w.week_number} ${badge}</span>
         <span style="font-size:11px;color:var(--gray);">${dateStr}</span>
