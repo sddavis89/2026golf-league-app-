@@ -392,6 +392,12 @@ function goToStep(step) {
   ['week','matchup','card','done'].forEach(s => {
     document.getElementById('step-'+s).style.display = s===step?'block':'none';
   });
+  // Reset submit button when leaving card
+  if (step !== 'card') {
+    const btn = document.getElementById('submit-btn');
+    if (btn) { btn.disabled = false; }
+    document.getElementById('card-status').innerHTML = '';
+  }
   window.scrollTo(0,0);
 }
 
@@ -572,6 +578,51 @@ function renderCard() {
       </div>
     </div>`;
   
+  // Build stroke summary for each pair
+  let strokeSummaryHtml = '';
+  S.pairs.forEach((pair, pi) => {
+    const p1Higher = pair.p1.hc > pair.p2.hc;
+    const p2Higher = pair.p2.hc > pair.p1.hc;
+    const diff = Math.abs(pair.p1.hc - pair.p2.hc);
+    
+    if (diff === 0) {
+      strokeSummaryHtml += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:6px;">
+        <span style="font-size:10px;font-weight:700;color:${pi===0?'#93c5fd':'#fca5a5'};text-transform:uppercase;letter-spacing:1px;min-width:50px;">${pi===0?'🔵 Low':'🔴 High'}</span>
+        <span style="font-size:12px;color:var(--gray);">Equal HCs — no strokes given</span>
+      </div>`;
+      return;
+    }
+    
+    const higherPlayer = p1Higher ? pair.p1 : pair.p2;
+    const lowerPlayer  = p1Higher ? pair.p2 : pair.p1;
+    const strokes = calcStrokes(higherPlayer.hc, lowerPlayer.hc);
+    
+    // Get hole numbers where strokes are given (sort by HDCP rank)
+    const strokeHoles = [];
+    strokes.forEach((s, h) => { if (s > 0) strokeHoles.push({hole: h+1, hdcp: HDCPS[h], strokes: s}); });
+    strokeHoles.sort((a,b) => a.hdcp - b.hdcp);
+    
+    strokeSummaryHtml += `<div style="padding:10px 12px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:6px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:10px;font-weight:700;color:${pi===0?'#93c5fd':'#fca5a5'};text-transform:uppercase;letter-spacing:1px;">${pi===0?'🔵 Low':'🔴 High'} Match</span>
+        <span style="font-size:11px;color:var(--white);font-weight:600;">${higherPlayer.name} <span style="color:var(--gold);">(HC ${higherPlayer.hc})</span> gets ${diff} stroke${diff!==1?'s':''} vs ${lowerPlayer.name} <span style="color:var(--gold);">(HC ${lowerPlayer.hc})</span></span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;">
+        ${strokeHoles.map(sh => `<div style="background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);border-radius:6px;padding:3px 8px;text-align:center;">
+          <div style="font-size:11px;font-weight:700;color:var(--white);">Hole ${sh.hole}</div>
+          <div style="font-size:9px;color:var(--gold);">${sh.strokes > 1 ? sh.strokes+' strokes' : '1 stroke'}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  
+  // Insert stroke summary after matchup info
+  document.getElementById('card-matchup-info').innerHTML += `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">⛳ Stroke Allocation This Week</div>
+      ${strokeSummaryHtml}
+    </div>`;
+
   document.getElementById('pts-a-name').textContent = `Team ${S.teamA.id}`;
   document.getElementById('pts-b-name').textContent = `Team ${S.teamB.id}`;
   
@@ -801,11 +852,11 @@ function openSubModal(pi, pli) {
 
 function selectSub(subId, name, hc) {
   const {pi,pli} = S.subModalCtx;
+  // Ask if HC needs adjusting
+  const newHC = prompt(`${name}'s current HC is ${hc}.\nEnter their HC for this week (or press OK to keep ${hc}):`, hc);
+  const finalHC = newHC !== null ? Math.min(18, Math.max(0, parseInt(newHC)||hc)) : hc;
   const p = pli===0 ? S.pairs[pi].p1 : S.pairs[pi].p2;
-  p.name=name; p.hc=hc; p.isSub=true; p.subId=subId;
-  // Re-sort pair by HC
-  const a = S.pairs[pi].p1, b = S.pairs[pi].p2;
-  if (a.hc > b.hc && pi===0) { /* low pair, might need re-sort across pairs */ }
+  p.name=name; p.hc=finalHC; p.isSub=true; p.subId=subId;
   closeSubModal();
   renderCard();
 }
@@ -866,17 +917,30 @@ async function submitCard() {
         // Update handicap for regular players
         if (!p.isSub) {
           const overPar = gross - PAR;
-          const prevHCs = await db(`handicaps?team_id=eq.${p.teamId}&player_slot=eq.${p.slot}&order=week_id.desc&limit=3`);
-          const prevScores = prevHCs.map(h=>h.gross_score?h.gross_score-PAR:null).filter(v=>v!==null);
-          let newHC;
+          // Get last 2 weeks of scores (we need at most 2 prev + current = 3 rolling)
+          const prevHCs = await db(`handicaps?team_id=eq.${p.teamId}&player_slot=eq.${p.slot}&order=week_id.desc&limit=2`);
+          const prevScores = prevHCs.map(h=>h.gross_score ? h.gross_score - PAR : null).filter(v=>v!==null);
           const t = p.teamId===S.teamA.id ? S.teamA : S.teamB;
           const startHC = p.slot==='p1' ? t.player1_hc_start : t.player2_hc_start;
-          if (prevScores.length===0) newHC = Math.round((startHC+overPar)/2);
-          else if (prevScores.length===1) newHC = Math.round((startHC+prevScores[0]+overPar)/3);
-          else newHC = Math.round((prevScores[0]+prevScores[1]+overPar)/3);
-          const prevHC = prevHCs.length>0 ? prevHCs[0].hc_after : startHC;
-          newHC = Math.max(0,Math.min(18,newHC));
-          if (newHC>prevHC+1) newHC=prevHC+1;
+          let newHC;
+
+          // HC = rolling avg of last 3 scores, starting HC counts as first data point:
+          // Wk 1 (no prior scores): (startHC + wk1OP) / 2
+          // Wk 2 (1 prior score):   (startHC + wk1OP + wk2OP) / 3
+          // Wk 3+ (2+ prior scores): (wk[n-2]OP + wk[n-1]OP + wkNOP) / 3  ← startHC drops off
+          if (prevScores.length === 0) {
+            newHC = Math.round((startHC + overPar) / 2);
+          } else if (prevScores.length === 1) {
+            newHC = Math.round((startHC + prevScores[0] + overPar) / 3);
+          } else {
+            // 2 prior scores available — rolling last 3
+            newHC = Math.round((prevScores[1] + prevScores[0] + overPar) / 3);
+          }
+
+          const prevHC = prevHCs.length > 0 ? prevHCs[0].hc_after : startHC;
+          newHC = Math.max(0, Math.min(18, newHC));
+          // +1 cap rule: can only rise by 1 per week, can drop freely
+          if (newHC > prevHC + 1) newHC = prevHC + 1;
           await db('handicaps','POST',{team_id:p.teamId,player_slot:p.slot,week_id:weekId,hc_after:newHC,gross_score:gross});
         } else if (p.subId) {
           // Update sub HC
@@ -912,6 +976,8 @@ async function submitCard() {
         </div>
       </div>`;
     
+    document.getElementById('submit-btn').disabled = false;
+    document.getElementById('card-status').innerHTML = '';
     goToStep('done');
     loadLeaderboard();
     renderSubs();
