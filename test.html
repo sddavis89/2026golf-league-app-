@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supabase Test</title>
+<style>
+  body{font-family:sans-serif;padding:20px;background:#0a2e12;color:white;}
+  .box{background:rgba(255,255,255,.1);border-radius:10px;padding:15px;margin:10px 0;font-size:14px;word-break:break-all;}
+  .ok{background:rgba(46,204,113,.2);border:1px solid #2ecc71;}
+  .err{background:rgba(192,57,43,.2);border:1px solid #e74c3c;}
+  button{padding:12px 20px;background:#c9a84c;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;width:100%;margin-top:10px;}
+</style>
+</head>
+<body>
+<h2 style="color:#c9a84c;">⛳ Supabase Connection Test</h2>
+<div id="log"></div>
+<button onclick="runTest()">Test Connection</button>
+
+<script>
+const URL = 'https://hnpajgsqppncyuzwpkuw.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhucGFqZ3NxcHBuY3l1endwa3V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTQyMjUsImV4cCI6MjA5NTgzMDIyNX0.i8ilA54aokKb7d7RxHPLKPW3GKmrj3DDDAJs84CLm98';
+
+function log(msg, ok) {
+  const div = document.createElement('div');
+  div.className = 'box ' + (ok ? 'ok' : 'err');
+  div.textContent = msg;
+  document.getElementById('log').appendChild(div);
+}
+
+async function runTest() {
+  document.getElementById('log').innerHTML = '';
+  log('Starting test...', true);
+  
+  // Test 1: Basic fetch with apikey in URL
+  try {
+    log('Test 1: Fetching with apikey in URL...', true);
+    const r1 = await fetch(`${URL}/rest/v1/teams?select=id&limit=1&apikey=${KEY}`);
+    log(`Test 1 status: ${r1.status} ${r1.statusText}`, r1.ok);
+    const d1 = await r1.text();
+    log(`Test 1 response: ${d1}`, r1.ok);
+  } catch(e) {
+    log(`Test 1 FAILED: ${e.message}`, false);
+  }
+
+  // Test 2: Fetch with headers
+  try {
+    log('Test 2: Fetching with headers...', true);
+    const r2 = await fetch(`${URL}/rest/v1/teams?select=id&limit=1`, {
+      headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` }
+    });
+    log(`Test 2 status: ${r2.status} ${r2.statusText}`, r2.ok);
+    const d2 = await r2.text();
+    log(`Test 2 response: ${d2}`, r2.ok);
+  } catch(e) {
+    log(`Test 2 FAILED: ${e.message}`, false);
+  }
+}
+
+runTest();
+</script>
+</body>
+</html>
