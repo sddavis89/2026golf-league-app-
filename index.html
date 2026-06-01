@@ -187,6 +187,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button class="tab" onclick="switchTab('leaderboard',this)">🏆 Standings</button>
     <button class="tab" onclick="switchTab('schedule',this)">📅 Schedule</button>
     <button class="tab" onclick="switchTab('subs',this)">👤 Subs</button>
+    <button class="tab" onclick="switchTab('admin',this)">🔒 Admin</button>
   </div>
 
   <!-- ══ SCORECARD TAB ══ -->
@@ -283,6 +284,62 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 </div>
 
+<!-- ADMIN TAB -->
+<div class="screen" id="tab-admin">
+
+  <!-- Lock screen -->
+  <div id="admin-lock" style="margin-top:20px;">
+    <div class="card" style="text-align:center;padding:30px 20px;">
+      <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--gold);margin-bottom:6px;">Admin Access</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:20px;">Enter password to continue</div>
+      <input type="password" id="admin-pw" class="form-input" placeholder="Password" 
+        style="text-align:center;margin-bottom:12px;" onkeydown="if(event.key==='Enter')checkAdminPW()">
+      <button class="btn btn-gold" onclick="checkAdminPW()">Unlock →</button>
+      <div id="admin-pw-error" style="color:#e74c3c;font-size:12px;margin-top:8px;display:none;">Incorrect password</div>
+    </div>
+  </div>
+
+  <!-- Admin panel (hidden until unlocked) -->
+  <div id="admin-panel" style="display:none;margin-top:16px;">
+    
+    <!-- Export section -->
+    <div class="card">
+      <div class="card-title">📥 Export Data</div>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:14px;">Download all season data as an Excel backup file.</p>
+      <button class="btn btn-gold" onclick="exportToExcel()" id="export-btn">Download Season Data (.xlsx)</button>
+      <div id="export-status" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- Edit scorecards section -->
+    <div class="card">
+      <div class="card-title">✏️ Edit Submitted Scorecards</div>
+      <div class="form-group">
+        <label class="form-label">Select Week</label>
+        <select class="form-select" id="admin-week-sel" onchange="loadAdminMatchups()">
+          <option value="">Select week...</option>
+        </select>
+      </div>
+      <div id="admin-matchup-list"></div>
+    </div>
+
+    <!-- Points override section -->
+    <div class="card" id="admin-edit-card" style="display:none;">
+      <div class="card-title">⚡ Edit Points</div>
+      <div id="admin-edit-content"></div>
+      <div id="admin-edit-status"></div>
+    </div>
+
+    <!-- Season summary -->
+    <div class="card">
+      <div class="card-title">📊 Season Summary</div>
+      <div id="admin-summary"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+    </div>
+
+    <button class="btn btn-outline" onclick="lockAdmin()" style="margin-top:4px;">🔒 Lock Admin</button>
+  </div>
+</div>
+
 <!-- SCORE STEPPER -->
 <div class="stepper-overlay" id="stepper" style="display:none;" onclick="closeStepper()">
   <div class="stepper-box" onclick="event.stopPropagation()">
@@ -359,6 +416,41 @@ let S = {
   currentPoints:{a:0,b:0}
 };
 
+// ── SAVE / RESTORE IN-PROGRESS CARD ─────────────────────────────
+function saveCardProgress() {
+  if (!S.selMatchup) return;
+  const data = {
+    selWeek: S.selWeek,
+    selMatchup: S.selMatchup,
+    teamA: S.teamA,
+    teamB: S.teamB,
+    pairs: S.pairs,
+    scores: S.scores,
+    savedAt: new Date().toISOString()
+  };
+  try { localStorage.setItem('golf_card_progress', JSON.stringify(data)); } catch(e) {}
+}
+
+function loadCardProgress() {
+  try {
+    const raw = localStorage.getItem('golf_card_progress');
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    // Check it's not more than 24 hours old
+    const saved = new Date(data.savedAt);
+    const now = new Date();
+    if ((now - saved) > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('golf_card_progress');
+      return false;
+    }
+    return data;
+  } catch(e) { return false; }
+}
+
+function clearCardProgress() {
+  try { localStorage.removeItem('golf_card_progress'); } catch(e) {}
+}
+
 // ── INIT ──────────────────────────────────────────────────────────
 async function init() {
   try {
@@ -374,6 +466,27 @@ async function init() {
     renderSchedule();
     renderSubs();
     loadLeaderboard();
+    
+    // Check for in-progress card
+    const saved = loadCardProgress();
+    if (saved) {
+      const d = new Date(saved.savedAt);
+      const timeStr = d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+      const dateStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const restore = confirm(`You have an unfinished scorecard from ${dateStr} at ${timeStr}.\n\nTeam ${saved.teamA.id} vs Team ${saved.teamB.id} — Week ${saved.selWeek.week_number}\n\nWould you like to continue where you left off?`);
+      if (restore) {
+        S.selWeek    = saved.selWeek;
+        S.selMatchup = saved.selMatchup;
+        S.teamA      = saved.teamA;
+        S.teamB      = saved.teamB;
+        S.pairs      = saved.pairs;
+        S.scores     = saved.scores;
+        renderCard();
+        goToStep('card');
+      } else {
+        clearCardProgress();
+      }
+    }
   } catch(e) {
     document.getElementById('week-list').innerHTML = `<div class="status err">Error loading: ${e.message}</div>`;
   }
@@ -512,15 +625,20 @@ function calcStrokes(higherHC, lowerHC) {
   const diff = Math.min(13, Math.max(0, higherHC - lowerHC));
   return HDCPS.map(hdcp => {
     if (diff === 0) return 0;
-    if (diff <= 9) return hdcp <= diff ? 1 : 0;
-    // 10-13 strokes: hardest 4 holes (HDCP 1-4) get 2, rest get 1
-    if (hdcp <= 4) return 2;
-    if (hdcp <= diff) return 1; // wait — for 10+ all holes get at least 1
-    // Actually: 10 strokes = all 9 holes get 1, plus hardest 1 gets 2
-    // 11 = all get 1, hardest 2 get 2, etc.
-    const extra = diff - 9;
-    if (hdcp <= extra) return 2;
-    return 1;
+    if (diff <= 9) {
+      // Simple: get 1 stroke on holes ranked 1 through diff
+      return hdcp <= diff ? 1 : 0;
+    } else {
+      // 10-13 strokes: all 9 holes get 1 stroke
+      // PLUS extra strokes on the hardest holes (ranked 1 through diff-9)
+      // diff=10: holes ranked 1 get 2 strokes, rest get 1
+      // diff=11: holes ranked 1-2 get 2 strokes, rest get 1
+      // diff=12: holes ranked 1-3 get 2 strokes, rest get 1
+      // diff=13: holes ranked 1-4 get 2 strokes, rest get 1
+      const extra = diff - 9;
+      if (hdcp <= extra) return 2;
+      return 1;
+    }
   });
 }
 
@@ -636,10 +754,16 @@ function renderScorecards() {
   area.innerHTML = S.pairs.map((pair, pi) => {
     const isLow = pi===0;
     // Determine which player gets strokes
+    // Only the HIGHER HC player receives strokes
     const p1Higher = pair.p1.hc > pair.p2.hc;
     const p2Higher = pair.p2.hc > pair.p1.hc;
+    // Pass higher HC first, lower HC second so diff is always positive
     const p1Strokes = p1Higher ? calcStrokes(pair.p1.hc, pair.p2.hc) : Array(9).fill(0);
     const p2Strokes = p2Higher ? calcStrokes(pair.p2.hc, pair.p1.hc) : Array(9).fill(0);
+    // Debug: log stroke totals
+    const p1StrokeTotal = p1Strokes.reduce((s,v)=>s+v,0);
+    const p2StrokeTotal = p2Strokes.reduce((s,v)=>s+v,0);
+    console.log(`Pair ${pi}: ${pair.p1.name}(HC${pair.p1.hc}) gets ${p1StrokeTotal} strokes, ${pair.p2.name}(HC${pair.p2.hc}) gets ${p2StrokeTotal} strokes`);
     
     return `<div class="sc-wrap">
       <div class="sc-pair-hdr ${isLow?'low':'high'}">${isLow?'🔵 Low Match':'🔴 High Match'} · ${pair.p1.name} vs ${pair.p2.name}</div>
@@ -651,6 +775,7 @@ function renderScorecards() {
               ${PARS.map((_,h)=>`<th>${h+1}</th>`).join('')}
               <th>Tot</th>
               <th>Adj</th>
+              <th>Pts</th>
             </tr>
             <tr class="par-row">
               <td class="left">Par / Yds / HC</td>
@@ -703,6 +828,7 @@ function renderScorecards() {
                 }).join('')}
                 <td class="total-cell">${grossTotal||'—'}</td>
                 <td class="adj-cell">${adjTotal||'—'}</td>
+                <td class="adj-cell" id="pts-pair${pi}-player${pli}" style="color:var(--gold-light);">—</td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -746,16 +872,15 @@ function confirmScore() {
   closeStepper();
   renderScorecards();
   updatePoints();
+  saveCardProgress();
 }
 function closeStepper() { document.getElementById('stepper').style.display='none'; }
 
 // ── POINTS CALCULATION ────────────────────────────────────────────
 function calcPairStrokes(pair) {
-  const p1Higher = pair.p1.hc > pair.p2.hc;
-  const p2Higher = pair.p2.hc > pair.p1.hc;
   return {
-    p1: p1Higher ? calcStrokes(pair.p1.hc,pair.p2.hc) : Array(9).fill(0),
-    p2: p2Higher ? calcStrokes(pair.p2.hc,pair.p1.hc) : Array(9).fill(0),
+    p1: pair.p1.hc > pair.p2.hc ? calcStrokes(pair.p1.hc, pair.p2.hc) : Array(9).fill(0),
+    p2: pair.p2.hc > pair.p1.hc ? calcStrokes(pair.p2.hc, pair.p1.hc) : Array(9).fill(0),
   };
 }
 
@@ -763,9 +888,11 @@ function getAdj(pi, pli, h) {
   const g = parseInt(S.scores[pi][pli][h]) || 0;
   if (!g) return null;
   const pair = S.pairs[pi];
-  const strk = calcPairStrokes(pair);
-  const s = pli===0 ? strk.p1[h] : strk.p2[h];
-  return g - s;
+  // Only higher HC player gets strokes
+  const p = pli===0 ? pair.p1 : pair.p2;
+  const opp = pli===0 ? pair.p2 : pair.p1;
+  const strokes = p.hc > opp.hc ? calcStrokes(p.hc, opp.hc) : Array(9).fill(0);
+  return g - strokes[h];
 }
 
 function getAdjTotal(pi, pli) {
@@ -822,6 +949,39 @@ function updatePoints() {
   
   S.currentPoints = {aHole,bHole,aIndiv,bIndiv,aTeam,bTeam,aTotal,bTotal};
   renderHoleGrid(holeRes);
+  
+  // Update individual player point totals on scorecard
+  // pair 0: p1=aLow, p2=bLow | pair 1: p1=aHigh, p2=bHigh
+  const pairPts = [
+    {p1Hole:0, p2Hole:0, p1Indiv:0, p2Indiv:0},
+    {p1Hole:0, p2Hole:0, p1Indiv:0, p2Indiv:0},
+  ];
+  
+  S.pairs.forEach((pair, pi) => {
+    let p1h=0, p2h=0;
+    for (let h=0;h<9;h++) {
+      const a=getAdj(pi,0,h), b=getAdj(pi,1,h);
+      if (a===null||b===null) continue;
+      if (a<b) p1h+=1; else if (b<a) p2h+=1; else {p1h+=.5;p2h+=.5;}
+    }
+    const at=getAdjTotal(pi,0), bt=getAdjTotal(pi,1);
+    let p1i=0, p2i=0;
+    if (at!==null&&bt!==null) {
+      if (at<bt) p1i=1; else if (bt<at) p2i=1; else {p1i=.5;p2i=.5;}
+    }
+    pairPts[pi] = {p1Hole:p1h, p2Hole:p2h, p1Indiv:p1i, p2Indiv:p2i};
+  });
+  
+  const fmt = v => v===0?'0':v%1===0?String(v):v.toFixed(1);
+  S.pairs.forEach((pair,pi) => {
+    const pp = pairPts[pi];
+    const p1Total = pp.p1Hole + pp.p1Indiv;
+    const p2Total = pp.p2Hole + pp.p2Indiv;
+    const el0 = document.getElementById(`pts-pair${pi}-player0`);
+    const el1 = document.getElementById(`pts-pair${pi}-player1`);
+    if (el0) el0.textContent = fmt(p1Total);
+    if (el1) el1.textContent = fmt(p2Total);
+  });
 }
 
 function renderHoleGrid(holeRes=Array(9).fill(null)) {
@@ -855,10 +1015,35 @@ function selectSub(subId, name, hc) {
   // Ask if HC needs adjusting
   const newHC = prompt(`${name}'s current HC is ${hc}.\nEnter their HC for this week (or press OK to keep ${hc}):`, hc);
   const finalHC = newHC !== null ? Math.min(18, Math.max(0, parseInt(newHC)||hc)) : hc;
+  
+  // Update the player slot
   const p = pli===0 ? S.pairs[pi].p1 : S.pairs[pi].p2;
   p.name=name; p.hc=finalHC; p.isSub=true; p.subId=subId;
+  
+  // Re-sort ALL pairs after sub HC change
+  // Collect all 4 players with their team
+  const allA = [S.pairs[0].p1, S.pairs[1].p1]; // team A players
+  const allB = [S.pairs[0].p2, S.pairs[1].p2]; // team B players
+  
+  // Re-sort each team by HC low to high
+  allA.sort((a,b) => a.hc - b.hc);
+  allB.sort((a,b) => a.hc - b.hc);
+  
+  // Reassign pairs: low-low, high-high
+  S.pairs[0].p1 = allA[0]; // A low
+  S.pairs[1].p1 = allA[1]; // A high
+  S.pairs[0].p2 = allB[0]; // B low
+  S.pairs[1].p2 = allB[1]; // B high
+  
+  // Reset scores since pairs may have changed
+  S.scores = [
+    [Array(9).fill(''), Array(9).fill('')],
+    [Array(9).fill(''), Array(9).fill('')],
+  ];
+  
   closeSubModal();
   renderCard();
+  saveCardProgress();
 }
 
 async function addAndSelectSub() {
@@ -978,6 +1163,7 @@ async function submitCard() {
     
     document.getElementById('submit-btn').disabled = false;
     document.getElementById('card-status').innerHTML = '';
+    clearCardProgress();
     goToStep('done');
     loadLeaderboard();
     renderSubs();
@@ -1118,6 +1304,282 @@ function renderSubs() {
         <div style="font-size:14px;font-weight:700;color:var(--gold);text-align:center;">${s.hc_start}</div>
         <div style="font-size:10px;color:var(--gray);text-align:center;">Available</div>
       </div>`).join('')}`;
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────
+const ADMIN_PW = 'PonyHills2026';
+
+function checkAdminPW() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PW) {
+    document.getElementById('admin-lock').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    document.getElementById('admin-pw').value = '';
+    loadAdminData();
+  } else {
+    document.getElementById('admin-pw-error').style.display = 'block';
+    document.getElementById('admin-pw').value = '';
+    setTimeout(() => document.getElementById('admin-pw-error').style.display = 'none', 2000);
+  }
+}
+
+function lockAdmin() {
+  document.getElementById('admin-lock').style.display = 'block';
+  document.getElementById('admin-panel').style.display = 'none';
+}
+
+async function loadAdminData() {
+  // Populate week selector
+  const sel = document.getElementById('admin-week-sel');
+  sel.innerHTML = '<option value="">Select week...</option>';
+  S.weeks.filter(w => getWeekStatus(w.date) !== 'upcoming').forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.id;
+    opt.textContent = `Week ${w.week_number} — ${new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+    sel.appendChild(opt);
+  });
+  loadAdminSummary();
+}
+
+async function loadAdminMatchups() {
+  const weekId = document.getElementById('admin-week-sel').value;
+  if (!weekId) return;
+  const el = document.getElementById('admin-matchup-list');
+  el.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  
+  try {
+    const matchups = await db(`matchups?week_id=eq.${weekId}&order=id`);
+    const pts = await db(`points?week_id=eq.${weekId}`);
+    
+    el.innerHTML = matchups.map(m => {
+      const ta = S.teams[m.team_a_id], tb = S.teams[m.team_b_id];
+      const ptsA = pts.find(p => p.team_id === m.team_a_id && p.matchup_id === m.id);
+      const ptsB = pts.find(p => p.team_id === m.team_b_id && p.matchup_id === m.id);
+      const fmt = v => v !== undefined && v !== null ? (v%1===0?v:parseFloat(v).toFixed(1)) : '—';
+      
+      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--white);">Team ${m.team_a_id} vs Team ${m.team_b_id}</div>
+          <span style="font-size:10px;color:${m.status==='submitted'?'#2ecc71':'var(--gold)'};">${m.status==='submitted'?'✓ Submitted':'Pending'}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;">
+            <div style="font-size:10px;color:var(--gray);">Team ${m.team_a_id}</div>
+            <div style="font-size:16px;font-weight:700;color:var(--gold);">${fmt(ptsA?.week_total)}</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;">
+            <div style="font-size:10px;color:var(--gray);">Team ${m.team_b_id}</div>
+            <div style="font-size:16px;font-weight:700;color:var(--gold);">${fmt(ptsB?.week_total)}</div>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="width:100%;" 
+          onclick="openEditPoints(${m.id},${m.team_a_id},${m.team_b_id},${ptsA?.id||'null'},${ptsB?.id||'null'},${ptsA?.week_total||0},${ptsB?.week_total||0})">
+          ✏️ Edit Points
+        </button>
+      </div>`;
+    }).join('') || '<div class="empty">No matchups found</div>';
+  } catch(e) {
+    el.innerHTML = `<div class="status err">Error: ${e.message}</div>`;
+  }
+}
+
+function openEditPoints(matchupId, teamAId, teamBId, ptsAId, ptsBId, ptsAVal, ptsBVal) {
+  const card = document.getElementById('admin-edit-card');
+  const content = document.getElementById('admin-edit-content');
+  card.style.display = 'block';
+  card.scrollIntoView({behavior:'smooth'});
+  
+  content.innerHTML = `
+    <div style="margin-bottom:14px;font-size:12px;color:var(--gray);">
+      Team ${teamAId} vs Team ${teamBId} — Total must equal 21 pts
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div>
+        <label class="form-label">Team ${teamAId} Points</label>
+        <input class="form-input" id="edit-pts-a" type="number" min="0" max="21" step="0.5" value="${ptsAVal}">
+      </div>
+      <div>
+        <label class="form-label">Team ${teamBId} Points</label>
+        <input class="form-input" id="edit-pts-b" type="number" min="0" max="21" step="0.5" value="${ptsBVal}">
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="saveEditPoints(${matchupId},${teamAId},${teamBId},${ptsAId},${ptsBId})">Save Changes</button>`;
+}
+
+async function saveEditPoints(matchupId, teamAId, teamBId, ptsAId, ptsBId) {
+  const ptsA = parseFloat(document.getElementById('edit-pts-a').value);
+  const ptsB = parseFloat(document.getElementById('edit-pts-b').value);
+  
+  if (isNaN(ptsA) || isNaN(ptsB)) { alert('Please enter valid points'); return; }
+  if (Math.abs(ptsA + ptsB - 21) > 0.01) { 
+    if (!confirm(`Points total ${ptsA + ptsB} instead of 21. Save anyway?`)) return;
+  }
+  
+  const weekId = document.getElementById('admin-week-sel').value;
+  
+  try {
+    if (ptsAId && ptsAId !== 'null') {
+      await db(`points?id=eq.${ptsAId}`, 'PATCH', {week_total: ptsA});
+    } else {
+      await db('points', 'POST', {matchup_id:matchupId, week_id:parseInt(weekId), team_id:teamAId, week_total:ptsA, hole_points:0, individual_points:0, team_point:0});
+    }
+    if (ptsBId && ptsBId !== 'null') {
+      await db(`points?id=eq.${ptsBId}`, 'PATCH', {week_total: ptsB});
+    } else {
+      await db('points', 'POST', {matchup_id:matchupId, week_id:parseInt(weekId), team_id:teamBId, week_total:ptsB, hole_points:0, individual_points:0, team_point:0});
+    }
+    
+    document.getElementById('admin-edit-status').innerHTML = '<div class="status ok">✓ Points saved successfully!</div>';
+    loadAdminMatchups();
+    loadLeaderboard();
+    setTimeout(() => document.getElementById('admin-edit-status').innerHTML = '', 3000);
+  } catch(e) {
+    document.getElementById('admin-edit-status').innerHTML = `<div class="status err">Error: ${e.message}</div>`;
+  }
+}
+
+async function loadAdminSummary() {
+  const el = document.getElementById('admin-summary');
+  try {
+    const [scores, pts, handicaps, subs] = await Promise.all([
+      db('scores?select=id'),
+      db('points?select=id,week_total'),
+      db('handicaps?select=id'),
+      db('subs?select=id'),
+    ]);
+    const totalPts = pts.reduce((s,p) => s + (parseFloat(p.week_total)||0), 0);
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:var(--gold);">${scores.length}</div>
+          <div style="font-size:10px;color:var(--gray);">Score Entries</div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:var(--gold);">${pts.length/2|0}</div>
+          <div style="font-size:10px;color:var(--gray);">Scorecards Submitted</div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:var(--gold);">${handicaps.length}</div>
+          <div style="font-size:10px;color:var(--gray);">HC Updates</div>
+        </div>
+        <div style="background:rgba(255,255,255,.03);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:var(--gold);">${subs.length}</div>
+          <div style="font-size:10px;color:var(--gray);">Subs on File</div>
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="status err">Error: ${e.message}</div>`;
+  }
+}
+
+// ── EXPORT TO EXCEL ───────────────────────────────────────────────
+async function exportToExcel() {
+  const btn = document.getElementById('export-btn');
+  const status = document.getElementById('export-status');
+  btn.disabled = true;
+  btn.textContent = 'Preparing export...';
+  status.innerHTML = '<div class="status info">Loading all season data...</div>';
+  
+  try {
+    // Fetch all data
+    const [weeks, matchups, scores, points, handicaps, subs] = await Promise.all([
+      db('weeks?order=week_number'),
+      db('matchups?order=id'),
+      db('scores?order=id'),
+      db('points?order=id'),
+      db('handicaps?order=id'),
+      db('subs?order=name'),
+    ]);
+    
+    // Build CSV content for multiple sheets (Excel-compatible)
+    // We'll create a multi-sheet workbook using a simple HTML table approach
+    // then trigger download as CSV files zipped -- actually just do CSV per section
+    
+    // Build comprehensive CSV
+    let csv = '';
+    
+    // === SEASON STANDINGS ===
+    csv += 'SEASON STANDINGS
+';
+    csv += 'Team,Player 1,Player 2,Season Total
+';
+    const teamTotals = {};
+    points.forEach(p => {
+      if (!teamTotals[p.team_id]) teamTotals[p.team_id] = 0;
+      teamTotals[p.team_id] += parseFloat(p.week_total)||0;
+    });
+    Object.entries(teamTotals)
+      .sort((a,b) => b[1]-a[1])
+      .forEach(([teamId, total]) => {
+        const t = S.teams[teamId];
+        if (t) csv += `Team ${teamId},"${t.player1_name}","${t.player2_name}",${total}
+`;
+      });
+    
+    csv += '
+WEEKLY POINTS
+';
+    csv += 'Week,Date,Team,Week Points
+';
+    points.forEach(p => {
+      const w = weeks.find(w => w.id === p.week_id);
+      const t = S.teams[p.team_id];
+      if (w && t) csv += `${w.week_number},${w.date},Team ${p.team_id},${p.week_total}
+`;
+    });
+    
+    csv += '
+SCORES
+';
+    csv += 'Week,Team,Player,HC Used,H1,H2,H3,H4,H5,H6,H7,H8,H9,Gross,Net
+';
+    scores.forEach(s => {
+      const m = matchups.find(m => m.id === s.matchup_id);
+      const w = m ? weeks.find(w => w.id === m.week_id) : null;
+      csv += `${w?.week_number||''},Team ${s.team_id},"${s.player_name}",${s.hc_used},${s.h1||''},${s.h2||''},${s.h3||''},${s.h4||''},${s.h5||''},${s.h6||''},${s.h7||''},${s.h8||''},${s.h9||''},${s.gross_total||''},${s.net_total||''}
+`;
+    });
+    
+    csv += '
+HANDICAPS
+';
+    csv += 'Week,Team,Player Slot,HC After Week,Gross Score
+';
+    handicaps.forEach(h => {
+      const w = weeks.find(w => w.id === h.week_id);
+      csv += `${w?.week_number||''},Team ${h.team_id},${h.player_slot},${h.hc_after},${h.gross_score||''}
+`;
+    });
+    
+    csv += '
+SUBS
+';
+    csv += 'Name,Current HC
+';
+    subs.forEach(s => { csv += `"${s.name}",${s.hc_start}
+`; });
+    
+    // Download
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `PonyHills_GolfLeague_2026_Backup_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    btn.disabled = false;
+    btn.textContent = 'Download Season Data (.xlsx)';
+    status.innerHTML = '<div class="status ok">✓ Export downloaded successfully!</div>';
+    setTimeout(() => status.innerHTML = '', 3000);
+    
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Download Season Data (.xlsx)';
+    status.innerHTML = `<div class="status err">Export failed: ${e.message}</div>`;
+  }
 }
 
 // ── START ─────────────────────────────────────────────────────────
