@@ -487,28 +487,29 @@ async function init() {
   document.getElementById('subs-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
 
   try {
-    // Load teams first so tabs are responsive
+    // Load teams first
+    debug.textContent = '🔄 Loading teams...';
     const teams = await db('teams?order=id');
     teams.forEach(t => S.teams[t.id] = t);
-    debug.textContent = `✓ Connected! Loaded ${teams.length} teams. Loading rest...`;
+    debug.textContent = `✓ ${teams.length} teams loaded. Loading weeks...`;
     debug.style.background = 'rgba(46,204,113,.1)';
     debug.style.borderColor = 'rgba(46,204,113,.3)';
     debug.style.color = '#2ecc71';
 
-    // Load rest in parallel
-    const [weeks, subs] = await Promise.all([
-      db('weeks?order=week_number'),
-      db('subs?order=name')
-    ]);
+    const weeks = await db('weeks?order=week_number');
     S.weeks = weeks;
-    S.subs  = subs;
+    debug.textContent = `✓ ${weeks.length} weeks loaded. Loading subs...`;
 
-    debug.textContent = `✓ Ready! ${weeks.length} weeks, ${subs.length} subs loaded.`;
-    setTimeout(() => { debug.style.display='none'; }, 3000);
+    const subs = await db('subs?order=name');
+    S.subs = subs;
+    debug.textContent = `✓ All data loaded! Rendering...`;
+
     renderWeekList();
     renderSchedule();
     renderSubs();
     loadLeaderboard();
+    debug.textContent = `✓ Ready! ${teams.length} teams, ${weeks.length} weeks`;
+    setTimeout(() => { debug.style.display='none'; }, 3000);
     
     // Check for in-progress card after data loads
     const saved = loadCardProgress();
@@ -1634,7 +1635,11 @@ SUBS
 }
 
 // ── START ─────────────────────────────────────────────────────────
-init();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 </script>
 </body>
 </html>
