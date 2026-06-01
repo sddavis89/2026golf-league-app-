@@ -397,9 +397,22 @@ async function db(path, method='GET', body=null) {
     }
   };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, opts);
-  if (!res.ok) throw new Error(await res.text());
-  return res.status===204 ? null : res.json();
+  
+  // Add 10 second timeout
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  opts.signal = controller.signal;
+  
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, opts);
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(await res.text());
+    return res.status===204 ? null : res.json();
+  } catch(e) {
+    clearTimeout(timeout);
+    if (e.name === 'AbortError') throw new Error('Connection timed out — check your internet and try again');
+    throw e;
+  }
 }
 
 // ── STATE ─────────────────────────────────────────────────────────
