@@ -453,21 +453,31 @@ function clearCardProgress() {
 
 // ── INIT ──────────────────────────────────────────────────────────
 async function init() {
+  // Render tabs immediately so app is usable right away
+  document.getElementById('week-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading weeks...</div>';
+  document.getElementById('lb-body').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+  document.getElementById('schedule-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+  document.getElementById('subs-list').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+
   try {
-    const [weeks, teams, subs] = await Promise.all([
+    // Load teams first so tabs are responsive
+    const teams = await db('teams?order=id');
+    teams.forEach(t => S.teams[t.id] = t);
+
+    // Load rest in parallel
+    const [weeks, subs] = await Promise.all([
       db('weeks?order=week_number'),
-      db('teams?order=id'),
       db('subs?order=name')
     ]);
     S.weeks = weeks;
     S.subs  = subs;
-    teams.forEach(t => S.teams[t.id] = t);
+
     renderWeekList();
     renderSchedule();
     renderSubs();
     loadLeaderboard();
     
-    // Check for in-progress card
+    // Check for in-progress card after data loads
     const saved = loadCardProgress();
     if (saved) {
       const d = new Date(saved.savedAt);
@@ -488,7 +498,11 @@ async function init() {
       }
     }
   } catch(e) {
-    document.getElementById('week-list').innerHTML = `<div class="status err">Error loading: ${e.message}</div>`;
+    const errMsg = `<div class="status err">⚠️ Unable to connect to database. Check your internet connection and try again.<br><small>${e.message}</small></div>`;
+    document.getElementById('week-list').innerHTML = errMsg;
+    document.getElementById('lb-body').innerHTML = errMsg;
+    document.getElementById('schedule-list').innerHTML = errMsg;
+    document.getElementById('subs-list').innerHTML = errMsg;
   }
 }
 
