@@ -392,30 +392,36 @@ const PAR   = 33;
 
 // ── API ───────────────────────────────────────────────────────────
 async function db(path, method='GET', body=null) {
-  const opts = {
-    method,
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': `Bearer ${SUPA_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': method==='POST'?'return=representation':''
-    }
+  // Build URL with apikey as query param for GET requests (more compatible with mobile)
+  let url = `${SUPA_URL}/rest/v1/${path}`;
+  if (method === 'GET' && !path.includes('apikey=')) {
+    url += (path.includes('?') ? '&' : '?') + `apikey=${SUPA_KEY}`;
+  }
+
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': `Bearer ${SUPA_KEY}`,
+    'Content-Type': 'application/json',
   };
+  if (method === 'POST') headers['Prefer'] = 'return=representation';
+
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
-  
-  // Add 10 second timeout
+
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-  opts.signal = controller.signal;
-  
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, opts);
+    const res = await fetch(url, opts);
     clearTimeout(timeout);
-    if (!res.ok) throw new Error(await res.text());
-    return res.status===204 ? null : res.json();
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`${res.status}: ${errText}`);
+    }
+    return res.status === 204 ? null : res.json();
   } catch(e) {
     clearTimeout(timeout);
-    if (e.name === 'AbortError') throw new Error('Connection timed out — check your internet and try again');
+    if (e.name === 'AbortError') throw new Error('Connection timed out — check internet connection');
     throw e;
   }
 }
