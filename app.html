@@ -5,1126 +5,717 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pony Hills Golf League</title>
 <style>
-body{margin:0;font-family:sans-serif;background:#0a2e12;color:#f8f4e8;min-height:100vh;}
-.hdr{text-align:center;padding:20px;background:#0f3d1a;border-bottom:1px solid #c9a84c;}
-.hdr h1{margin:0;color:#c9a84c;font-size:22px;}
-.hdr p{margin:4px 0 0;color:#888;font-size:12px;}
-.tabs{display:flex;background:#0f3d1a;border-bottom:1px solid rgba(201,168,76,.2);}
-.tab{flex:1;padding:12px 4px;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
-.tab.active{color:#c9a84c;border-bottom-color:#c9a84c;}
-.page{display:none;padding:16px;}.page.active{display:block;}
-.status{padding:12px;border-radius:8px;margin:8px 0;font-size:13px;text-align:center;}
-.status.ok{background:rgba(46,204,113,.15);border:1px solid #2ecc71;color:#2ecc71;}
-.status.err{background:rgba(192,57,43,.15);border:1px solid #e74c3c;color:#e74c3c;}
-.status.info{background:rgba(201,168,76,.1);border:1px solid #c9a84c;color:#c9a84c;}
-#debug{padding:10px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:8px;margin:8px 0;font-size:12px;color:#c9a84c;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a2e12;font-family:Arial,sans-serif;color:#f8f4e8;min-height:100vh;}
+.hdr{text-align:center;padding:14px;background:#0f3d1a;border-bottom:2px solid #c9a84c;}
+.hdr h1{color:#c9a84c;font-size:20px;}.hdr p{color:#888;font-size:11px;margin-top:3px;}
+.tabs{display:flex;background:#0f3d1a;border-bottom:1px solid #c9a84c44;position:sticky;top:0;z-index:50;}
+.tab{flex:1;padding:10px 2px;background:none;border:none;border-bottom:2px solid transparent;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;}
+.tab.on{color:#c9a84c;border-bottom-color:#c9a84c;}
+.pg{display:none;padding:14px;}.pg.on{display:block;}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;margin-bottom:12px;}
+.btn{width:100%;padding:13px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;}
+.btn:disabled{opacity:.4;cursor:default;}
+.btn2{width:100%;padding:11px;border-radius:10px;border:1px solid #c9a84c44;background:none;color:#c9a84c;font-size:13px;cursor:pointer;margin-bottom:8px;}
+.inp{width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;margin-bottom:10px;outline:none;}
+.inp:focus{border-color:#c9a84c;}
+.ok{padding:10px;border-radius:8px;background:rgba(46,204,113,.15);border:1px solid #2ecc71;color:#2ecc71;font-size:12px;text-align:center;margin-bottom:8px;}
+.err{padding:10px;border-radius:8px;background:rgba(192,57,43,.15);border:1px solid #e74c3c;color:#e74c3c;font-size:12px;text-align:center;margin-bottom:8px;}
+.info{padding:10px;border-radius:8px;background:rgba(201,168,76,.1);border:1px solid #c9a84c44;color:#c9a84c;font-size:12px;text-align:center;margin-bottom:8px;}
+#dbg{padding:8px 12px;background:rgba(201,168,76,.1);border:1px solid #c9a84c44;border-radius:8px;margin-bottom:10px;font-size:12px;color:#c9a84c;}
+.spin{width:24px;height:24px;border:2px solid rgba(201,168,76,.2);border-top-color:#c9a84c;border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 8px;}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ld{text-align:center;padding:30px;}
+.sc-wrap{overflow-x:auto;margin-bottom:12px;}
+.sc-table{border-collapse:collapse;font-size:11px;min-width:520px;width:100%;}
+.sc-table td{padding:3px 2px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05);}
+.sc-table .lbl{text-align:left;padding-left:8px;font-size:10px;min-width:90px;}
+.hbtn{width:28px;height:26px;border-radius:5px;border:1px solid rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:700;cursor:pointer;position:relative;}
+.sdot{position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:#c9a84c;font-size:5px;font-weight:700;color:#0a2e12;display:flex;align-items:center;justify-content:center;z-index:1;}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+.ovb{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.box{background:#1a3a1a;border:1px solid #c9a84c66;border-radius:16px;padding:20px;width:100%;max-width:360px;text-align:center;}
+.sbox{background:#0f3d1a;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:640px;max-height:82vh;overflow-y:auto;}
+.row-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.row-item:last-child{border-bottom:none;}
+.lb-hdr{background:#1a3a1a;border:1px solid #c9a84c66;border-radius:14px 14px 0 0;padding:16px;text-align:center;}
+.lb-cols{background:#1a3a1a;display:grid;grid-template-columns:40px 1fr 55px 65px;padding:7px 12px;border-left:1px solid #c9a84c44;border-right:1px solid #c9a84c44;}
+.lb-body{border:1px solid #c9a84c44;border-top:none;border-radius:0 0 14px 14px;overflow:hidden;}
+.lb-row{display:grid;grid-template-columns:40px 1fr 55px 65px;padding:11px 12px;align-items:center;border-bottom:1px solid rgba(255,255,255,.04);}
+.lb-row:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
-
-<div class="hdr">
-  <h1>⛳ Pony Hills Golf League</h1>
-  <p>Pony Hills Country Club · 2026</p>
-</div>
-
+<div class="hdr"><h1>⛳ Pony Hills Golf League</h1><p>Pony Hills Country Club · 2026</p></div>
 <div class="tabs">
-  <button class="tab active" onclick="show('scorecard',this)">⛳ Scorecard</button>
-  <button class="tab" onclick="show('standings',this)">🏆 Standings</button>
-  <button class="tab" onclick="show('schedule',this)">📅 Schedule</button>
-  <button class="tab" onclick="show('subs',this)">👤 Subs</button>
-  <button class="tab" onclick="show('admin',this)">🔒 Admin</button>
+  <button class="tab on" onclick="pg('sc',this)">⛳ Card</button>
+  <button class="tab" onclick="pg('lb',this)">🏆 Standings</button>
+  <button class="tab" onclick="pg('sch',this)">📅 Schedule</button>
+  <button class="tab" onclick="pg('sb',this)">👤 Subs</button>
+  <button class="tab" onclick="pg('adm',this)">🔒 Admin</button>
 </div>
-
-<div id="debug">🔄 Starting up...</div>
-
-<div class="page active" id="page-scorecard">
-  <div id="week-list"><div class="status info">Loading weeks...</div></div>
-</div>
-
-<div class="page" id="page-standings">
-  <div id="standings-body"><div class="status info">Loading standings...</div></div>
-</div>
-
-<div class="page" id="page-schedule">
-  <div id="schedule-body"><div class="status info">Loading schedule...</div></div>
-</div>
-
-<div class="page" id="page-subs">
-  <div id="subs-body"><div class="status info">Loading subs...</div></div>
-</div>
-
-<div class="page" id="page-admin">
-  <!-- Lock screen -->
-  <div id="admin-lock" style="margin-top:20px;">
-    <div style="text-align:center;padding:30px 20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;">
+<div id="dbg">🔄 Connecting...</div>
+<div class="pg on" id="pg-sc"><div id="sc-body"><div class="ld"><div class="spin"></div>Loading...</div></div></div>
+<div class="pg" id="pg-lb"><div id="lb-body"><div class="ld"><div class="spin"></div>Loading...</div></div></div>
+<div class="pg" id="pg-sch"><div id="sch-body"><div class="ld"><div class="spin"></div>Loading...</div></div></div>
+<div class="pg" id="pg-sb"><div id="sb-body"><div class="ld"><div class="spin"></div>Loading...</div></div></div>
+<div class="pg" id="pg-adm">
+  <div id="adm-lock" style="padding:14px;">
+    <div class="card" style="text-align:center;padding:28px 20px;">
       <div style="font-size:36px;margin-bottom:12px;">🔒</div>
       <div style="font-size:18px;font-weight:700;color:#c9a84c;margin-bottom:6px;">Admin Access</div>
-      <div style="font-size:12px;color:#888;margin-bottom:20px;">Enter password to continue</div>
-      <input type="password" id="admin-pw" placeholder="Password" 
-        style="width:100%;padding:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;text-align:center;margin-bottom:12px;"
-        onkeydown="if(event.key==='Enter')checkPW()">
-      <button onclick="checkPW()" style="width:100%;padding:13px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:15px;font-weight:700;cursor:pointer;">Unlock →</button>
-      <div id="pw-err" style="color:#e74c3c;font-size:12px;margin-top:8px;display:none;">Incorrect password</div>
+      <input type="password" id="adm-pw" class="inp" placeholder="Password" style="text-align:center;" onkeydown="if(event.key==='Enter')chkPW()">
+      <button class="btn" onclick="chkPW()">Unlock</button>
+      <div id="pw-err" style="color:#e74c3c;font-size:12px;display:none;">Incorrect password</div>
     </div>
   </div>
-
-  <!-- Admin panel -->
-  <div id="admin-panel" style="display:none;margin-top:8px;">
-
-    <!-- Export -->
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:14px;">
-      <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:10px;">📥 Export Data</div>
-      <p style="font-size:12px;color:#888;margin-bottom:14px;">Download all season data as a CSV backup file that opens in Excel.</p>
-      <button onclick="exportData()" id="export-btn" style="width:100%;padding:13px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:14px;font-weight:700;cursor:pointer;">Download Season Backup</button>
-      <div id="export-status" style="margin-top:8px;"></div>
+  <div id="adm-panel" style="display:none;padding:14px;">
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:10px;">📥 Export Season Backup</div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">Downloads all scores, points, and handicaps as a CSV file that opens in Excel.</p>
+      <button class="btn" onclick="exportData()" id="exp-btn">Download Backup (CSV)</button>
+      <div id="exp-st"></div>
     </div>
-
-    <!-- Edit Points -->
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:14px;">
+    <div class="card">
       <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:12px;">✏️ Edit Points</div>
-      <select id="admin-wk" onchange="loadAdminMatchups()" style="width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;margin-bottom:10px;">
-        <option value="">Select week...</option>
-      </select>
-      <div id="admin-matchups"></div>
+      <select id="adm-wk" class="inp" onchange="loadAdmMatchups('pts')"><option value="">Select week...</option></select>
+      <div id="adm-pts-list"></div>
     </div>
-
-    <!-- Season Stats -->
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:14px;">
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:12px;">📝 Edit Scorecard Scores</div>
+      <select id="adm-wk2" class="inp" onchange="loadAdmMatchups('sc')"><option value="">Select week...</option></select>
+      <div id="adm-sc-list"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:12px;">📋 Set Late-Season Matchups</div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">Set pairings for Weeks 14, 15 and Position Night based on standings.</p>
+      <select id="adm-late-wk" class="inp"><option value="">Select week...</option><option value="14">Week 14</option><option value="15">Week 15</option><option value="16">Week 16 — Position Night</option></select>
+      <div id="adm-matchup-builder"></div>
+    </div>
+    <div class="card">
       <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:12px;">📊 Season Stats</div>
-      <div id="admin-stats"><div class="status info">Loading...</div></div>
+      <div id="adm-stats"><div class="info">Loading...</div></div>
     </div>
-
-    <button onclick="lockAdmin()" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:14px;cursor:pointer;">🔒 Lock Admin</button>
+    <button class="btn2" onclick="lockAdm()">🔒 Lock Admin</button>
   </div>
 </div>
-
 <script>
-const SUPA_URL = 'https://hnpajgsqppncyuzwpkuw.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhucGFqZ3NxcHBuY3l1endwa3V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTQyMjUsImV4cCI6MjA5NTgzMDIyNX0.i8ilA54aokKb7d7RxHPLKPW3GKmrj3DDDAJs84CLm98';
+const SU='https://hnpajgsqppncyuzwpkuw.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhucGFqZ3NxcHBuY3l1endwa3V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTQyMjUsImV4cCI6MjA5NTgzMDIyNX0.i8ilA54aokKb7d7RxHPLKPW3GKmrj3DDDAJs84CLm98';
+const PARS=[4,4,3,3,4,4,4,3,4],HDCPS=[6,5,7,8,3,1,2,9,4],YARDS=[240,281,208,214,287,300,291,117,321],PAR=33;
+const SCH={1:[[1,9],[2,5],[3,8],[4,12],[6,10],[7,11],[13,14]],2:[[1,2],[3,7],[4,9],[5,13],[6,11],[8,10],[12,14]],3:[[1,11],[2,8],[3,13],[4,6],[5,10],[7,12],[9,14]],4:[[1,8],[2,11],[3,9],[4,10],[5,6],[7,14],[12,13]],5:[[1,4],[2,14],[3,10],[5,7],[6,12],[8,9],[11,13]],6:[[1,13],[2,4],[3,6],[5,9],[7,10],[8,12],[11,14]],7:[[1,10],[2,7],[3,4],[5,12],[6,14],[8,11],[9,13]],8:[[1,6],[2,10],[3,12],[4,5],[7,13],[8,14],[9,11]],9:[[1,3],[2,13],[4,8],[5,11],[6,7],[9,12],[10,14]],10:[[1,12],[2,3],[4,7],[5,14],[6,9],[8,13],[10,11]],11:[[1,5],[2,9],[3,11],[4,14],[6,13],[7,8],[10,12]],12:[[1,14],[2,12],[3,5],[4,11],[6,8],[7,9],[10,13]],13:[[1,7],[2,6],[3,14],[4,13],[5,8],[9,10],[11,12]]};
+const APW='PonyHills2026';
+let T={},W=[],S=[],selW=null,selM=null,tA=null,tB=null,pairs=[],sc=[[],[]],stCtx=null,subCtx=null;
 
-function show(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  btn.classList.add('active');
+async function api(path,method,body){
+  const u=SU+'/rest/v1/'+path+(path.includes('?')?'&':'?')+'apikey='+SK;
+  const h={'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};
+  if(method==='POST')h['Prefer']='return=representation';
+  const o={method:method||'GET',headers:h};
+  if(body)o.body=JSON.stringify(body);
+  const r=await fetch(u,o);
+  if(!r.ok)throw new Error(r.status+': '+await r.text());
+  return r.status===204?null:r.json();
 }
+const get=p=>api(p,'GET');
+const post=(p,b)=>api(p,'POST',b);
+const patch=(p,b)=>api(p,'PATCH',b);
+const del=p=>api(p,'DELETE');
 
-function dbg(msg) {
-  document.getElementById('debug').textContent = msg;
-  console.log(msg);
+function dbg(m){const e=document.getElementById('dbg');if(e)e.textContent=m;}
+function pg(id,btn){document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));document.getElementById('pg-'+id).classList.add('on');btn.classList.add('on');}
+function fmt(v){return v===null||v===undefined?'--':parseFloat(v)%1===0?String(parseFloat(v)):parseFloat(v).toFixed(1);}
+function st(id,msg,type){const e=document.getElementById(id);if(e)e.innerHTML='<div class="'+type+'">'+msg+'</div>';}
+function rmOv(id){const e=document.getElementById(id);if(e)e.remove();}
+function wkSt(d){const t=new Date();t.setHours(0,0,0,0);const wd=new Date(d+'T12:00:00');const nx=new Date(wd);nx.setDate(nx.getDate()+1);if(t<wd)return'up';if(t<nx)return'now';return'done';}
+
+function calcSt(hi,lo){
+  const d=Math.min(13,Math.max(0,hi-lo));
+  return HDCPS.map(h=>{if(d===0)return 0;if(d<=9)return h<=d?1:0;return h<=(d-9)?2:1;});
 }
-
-async function get(path) {
-  const url = `${SUPA_URL}/rest/v1/${path}${path.includes('?')?'&':'?'}apikey=${SUPA_KEY}`;
-  const res = await fetch(url, {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
-  });
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-  return res.json();
+function getAdj(pi,pli,h,sc2){
+  const g=parseInt((sc2||sc)[pi][pli][h])||0;if(!g)return null;
+  const p=pli===0?pairs[pi].p1:pairs[pi].p2,o=pli===0?pairs[pi].p2:pairs[pi].p1;
+  const st2=p.hc>o.hc?calcSt(p.hc,o.hc):Array(9).fill(0);
+  return g-st2[h];
 }
-
-async function post(path, body) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': `Bearer ${SUPA_KEY}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-  return res.json();
-}
-
-async function patch(path, body) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    method: 'PATCH',
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': `Bearer ${SUPA_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-  return res.status === 204 ? null : res.json();
-}
-
-// ── DATA ──────────────────────────────────────────────────────────
-const PARS  = [4,4,3,3,4,4,4,3,4];
-const HDCPS = [6,5,7,8,3,1,2,9,4];
-const YARDS = [240,281,208,214,287,300,291,117,321];
-const PAR   = 33;
-
-const SCHEDULE = {
-  1:[[1,9],[2,5],[3,8],[4,12],[6,10],[7,11],[13,14]],
-  2:[[1,2],[3,7],[4,9],[5,13],[6,11],[8,10],[12,14]],
-  3:[[1,11],[2,8],[3,13],[4,6],[5,10],[7,12],[9,14]],
-  4:[[1,8],[2,11],[3,9],[4,10],[5,6],[7,14],[12,13]],
-  5:[[1,4],[2,14],[3,10],[5,7],[6,12],[8,9],[11,13]],
-  6:[[1,13],[2,4],[3,6],[5,9],[7,10],[8,12],[11,14]],
-  7:[[1,10],[2,7],[3,4],[5,12],[6,14],[8,11],[9,13]],
-  8:[[1,6],[2,10],[3,12],[4,5],[7,13],[8,14],[9,11]],
-  9:[[1,3],[2,13],[4,8],[5,11],[6,7],[9,12],[10,14]],
-  10:[[1,12],[2,3],[4,7],[5,14],[6,9],[8,13],[10,11]],
-  11:[[1,5],[2,9],[3,11],[4,14],[6,13],[7,8],[10,12]],
-  12:[[1,14],[2,12],[3,5],[4,11],[6,8],[7,9],[10,13]],
-  13:[[1,7],[2,6],[3,14],[4,13],[5,8],[9,10],[11,12]]
-};
-
-let TEAMS = {}, WEEKS = [], SUBS = [];
-let selWeek = null, selMatchup = null, teamA = null, teamB = null;
-let pairs = [], scores = [[],[]], stepCtx = null, subCtx = null;
-
-// ── INIT ──────────────────────────────────────────────────────────
-async function init() {
-  dbg('🔄 Loading teams...');
-  try {
-    const teams = await get('teams?order=id');
-    teams.forEach(t => TEAMS[t.id] = t);
-    dbg(`✓ ${teams.length} teams loaded. Loading weeks...`);
-
-    WEEKS = await get('weeks?order=week_number');
-    dbg(`✓ ${WEEKS.length} weeks loaded. Loading subs...`);
-
-    SUBS = await get('subs?order=name');
-    dbg(`✓ Ready! ${teams.length} teams · ${WEEKS.length} weeks · ${SUBS.length} subs`);
-    setTimeout(() => document.getElementById('debug').style.display='none', 3000);
-
-    renderWeeks();
-    renderScheduleTab();
-    renderSubsTab();
-    renderStandings();
-
-    // Restore in-progress card
-    try {
-      const saved = JSON.parse(localStorage.getItem('golf_progress')||'null');
-      if (saved && saved.matchupId) {
-        const age = Date.now() - saved.ts;
-        if (age < 86400000) {
-          if (confirm(`Resume unfinished scorecard?\nTeam ${saved.teamAId} vs Team ${saved.teamBId} — Week ${saved.weekNum}`)) {
-            restoreCard(saved);
-          } else {
-            localStorage.removeItem('golf_progress');
-          }
-        }
-      }
-    } catch(e) {}
-
-  } catch(e) {
-    dbg(`❌ Error: ${e.message}`);
-    document.getElementById('week-list').innerHTML = `<div class="status err">Failed to load: ${e.message}</div>`;
-  }
-}
-
-// ── WEEK LIST ─────────────────────────────────────────────────────
-function getStatus(dateStr) {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const d = new Date(dateStr+'T12:00:00');
-  const next = new Date(d); next.setDate(next.getDate()+1);
-  if (today < d) return 'upcoming';
-  if (today < next) return 'active';
-  return 'completed';
-}
-
-function renderWeeks() {
-  const el = document.getElementById('week-list');
-  const avail = WEEKS.filter(w => getStatus(w.date) !== 'upcoming');
-  if (!avail.length) { el.innerHTML = '<div class="status info">No weeks available yet</div>'; return; }
-  el.innerHTML = avail.map(w => {
-    const s = getStatus(w.date);
-    const d = new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    const badge = s==='active'?` <span style="background:#c9a84c;color:#0a2e12;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;">This Week</span>`:'';
-    return `<button onclick="selectWeek(${w.id})" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#f8f4e8;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px;">
-      <span>Week ${w.week_number}${badge}</span>
-      <span style="color:#888;font-size:12px;">${d} ›</span>
-    </button>`;
-  }).join('');
-}
-
-async function selectWeek(weekId) {
-  selWeek = WEEKS.find(w => w.id === weekId);
-  const matchups = await get(`matchups?week_id=eq.${weekId}&order=id`);
-  const el = document.getElementById('week-list');
-  
-  el.innerHTML = `<button onclick="renderWeeks()" style="background:none;border:none;color:#888;cursor:pointer;padding:8px 0;font-size:13px;">← Back</button>
-  <div style="font-size:16px;font-weight:700;color:#c9a84c;margin-bottom:12px;">Week ${selWeek.week_number} — Select Your Matchup</div>` +
-  matchups.map(m => {
-    const ta = TEAMS[m.team_a_id], tb = TEAMS[m.team_b_id];
-    if (!ta||!tb) return '';
-    const pairs = buildPairs(ta, tb, {});
-    return `<div onclick="openMatchup(${m.id},${m.team_a_id},${m.team_b_id})" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;">
-      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:10px;">
-        <div>
-          <div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM ${ta.id}</div>
-          <div style="font-size:12px;">${ta.player1_name}</div>
-          <div style="font-size:12px;">${ta.player2_name}</div>
-        </div>
-        <div style="width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#c9a84c;">VS</div>
-        <div style="text-align:right;">
-          <div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM ${tb.id}</div>
-          <div style="font-size:12px;">${tb.player1_name}</div>
-          <div style="font-size:12px;">${tb.player2_name}</div>
-        </div>
-      </div>
-      ${pairs.map((p,i) => `<div style="display:grid;grid-template-columns:1fr auto 1fr;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:6px;${i===0?'margin-bottom:4px':''}">
-        <span style="font-size:11px;">${p.p1.name} <span style="color:#c9a84c;">(${p.p1.hc})</span></span>
-        <span style="font-size:10px;color:#888;text-align:center;">${i===0?'🔵 Low':'🔴 High'}</span>
-        <span style="font-size:11px;text-align:right;">${p.p2.name} <span style="color:#c9a84c;">(${p.p2.hc})</span></span>
-      </div>`).join('')}
-    </div>`;
-  }).join('');
-}
-
-// ── PAIR BUILDING ─────────────────────────────────────────────────
-function buildPairs(ta, tb, overrides) {
-  const getP = (team, slot) => {
-    const key = `${team.id}_${slot}`;
-    if (overrides[key]) return {...overrides[key], teamId:team.id, slot};
-    return {teamId:team.id, slot, name:slot==='p1'?team.player1_name:team.player2_name, hc:slot==='p1'?team.player1_hc_start:team.player2_hc_start, isSub:false, subId:null};
-  };
-  const aP = [getP(ta,'p1'),getP(ta,'p2')].sort((a,b)=>a.hc-b.hc);
-  const bP = [getP(tb,'p1'),getP(tb,'p2')].sort((a,b)=>a.hc-b.hc);
-  return [{label:'Low',p1:aP[0],p2:bP[0]},{label:'High',p1:aP[1],p2:bP[1]}];
-}
-
-function calcStrokes(hi, lo) {
-  const diff = Math.min(13, Math.max(0, hi - lo));
-  return HDCPS.map(hdcp => {
-    if (diff === 0) return 0;
-    if (diff <= 9) return hdcp <= diff ? 1 : 0;
-    const extra = diff - 9;
-    return hdcp <= extra ? 2 : 1;
-  });
-}
-
-async function getHC(teamId, slot) {
-  try {
-    const rows = await get(`handicaps?team_id=eq.${teamId}&player_slot=eq.${slot}&order=week_id.desc&limit=1`);
-    if (rows && rows.length) return rows[0].hc_after;
-  } catch(e) {}
-  const t = TEAMS[teamId];
-  return slot==='p1' ? t.player1_hc_start : t.player2_hc_start;
-}
-
-async function openMatchup(matchupId, taId, tbId) {
-  dbg('🔄 Loading current handicaps...');
-  selMatchup = {id: matchupId};
-  teamA = TEAMS[taId]; teamB = TEAMS[tbId];
-  const [a1,a2,b1,b2] = await Promise.all([getHC(taId,'p1'),getHC(taId,'p2'),getHC(tbId,'p1'),getHC(tbId,'p2')]);
-  dbg('✓ Handicaps loaded');
-  setTimeout(() => document.getElementById('debug').style.display='none', 2000);
-
-  const aTeam = [{teamId:taId,slot:'p1',name:teamA.player1_name,hc:a1,isSub:false,subId:null},{teamId:taId,slot:'p2',name:teamA.player2_name,hc:a2,isSub:false,subId:null}].sort((a,b)=>a.hc-b.hc);
-  const bTeam = [{teamId:tbId,slot:'p1',name:teamB.player1_name,hc:b1,isSub:false,subId:null},{teamId:tbId,slot:'p2',name:teamB.player2_name,hc:b2,isSub:false,subId:null}].sort((a,b)=>a.hc-b.hc);
-  pairs = [{label:'Low',p1:aTeam[0],p2:bTeam[0]},{label:'High',p1:aTeam[1],p2:bTeam[1]}];
-  scores = [[Array(9).fill(''),Array(9).fill('')],[Array(9).fill(''),Array(9).fill('')]];
-  renderScorecard();
-}
-
-// ── SCORECARD ─────────────────────────────────────────────────────
-function renderScorecard() {
-  const el = document.getElementById('week-list');
-  
-  // Stroke summary
-  let strokeHtml = '<div style="margin-bottom:14px;"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;margin-bottom:8px;">⛳ Stroke Allocation</div>';
-  pairs.forEach((pair,pi) => {
-    const diff = Math.abs(pair.p1.hc - pair.p2.hc);
-    const higher = pair.p1.hc > pair.p2.hc ? pair.p1 : pair.p2;
-    const lower  = pair.p1.hc > pair.p2.hc ? pair.p2 : pair.p1;
-    if (diff === 0) {
-      strokeHtml += `<div style="padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:6px;font-size:12px;color:#888;">${pi===0?'🔵 Low':'🔴 High'}: Equal HCs — no strokes</div>`;
-    } else {
-      const strks = calcStrokes(higher.hc, lower.hc);
-      const holeChips = strks.map((s,h) => s>0 ? `<span style="background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.3);border-radius:5px;padding:2px 6px;font-size:11px;margin:2px;">H${h+1}${s>1?' (×2)':''}</span>` : '').join('');
-      strokeHtml += `<div style="padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:6px;">
-        <div style="font-size:11px;font-weight:600;color:#f8f4e8;margin-bottom:5px;">${pi===0?'🔵 Low':'🔴 High'}: ${higher.name} (HC ${higher.hc}) gets ${diff} stroke${diff!==1?'s':''}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:2px;">${holeChips}</div>
-      </div>`;
-    }
-  });
-  strokeHtml += '</div>';
-
-  // Scorecard tables
-  let cardHtml = pairs.map((pair, pi) => {
-    const p1s = pair.p1.hc > pair.p2.hc ? calcStrokes(pair.p1.hc,pair.p2.hc) : Array(9).fill(0);
-    const p2s = pair.p2.hc > pair.p1.hc ? calcStrokes(pair.p2.hc,pair.p1.hc) : Array(9).fill(0);
-    const sc1 = scores[pi][0], sc2 = scores[pi][1];
-
-    // Pre-calculate adj scores and hole winners
-    const adjRow1 = PARS.map((_,h) => {const g=parseInt(sc1[h])||0;return g>0?g-p1s[h]:null;});
-    const adjRow2 = PARS.map((_,h) => {const g=parseInt(sc2[h])||0;return g>0?g-p2s[h]:null;});
-    const holeWinner = PARS.map((_,h) => {
-      const a=adjRow1[h], b=adjRow2[h];
-      if(a===null||b===null) return 'none';
-      if(a<b) return 'p1'; if(b<a) return 'p2'; return 'tie';
-    });
-
-    const holeBg = h => {
-      const w = holeWinner[h];
-      if(w==='p1') return '#1a4a1a';
-      if(w==='p2') return '#1a2a4a';
-      if(w==='tie') return '#3a3a2a';
-      return 'rgba(255,255,255,.04)';
-    };
-    const holeBorder = h => {
-      const w = holeWinner[h];
-      if(w==='p1') return '#2d8a3e';
-      if(w==='p2') return '#2563eb';
-      if(w==='tie') return '#c9a84c';
-      return 'rgba(255,255,255,.1)';
-    };
-
-    const gross1 = sc1.reduce((s,v)=>s+(parseInt(v)||0),0);
-    const gross2 = sc2.reduce((s,v)=>s+(parseInt(v)||0),0);
-    const adj1 = adjRow1.reduce((s,v)=>s+(v!==null?v:0),0);
-    const adj2 = adjRow2.reduce((s,v)=>s+(v!==null?v:0),0);
-
-    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:14px;">
-      <div style="padding:8px 12px;background:${pi===0?'linear-gradient(135deg,#1a4a8a,#1a3a6a)':'linear-gradient(135deg,#8a1a1a,#6a1a1a)'};font-size:12px;font-weight:700;color:#fff;">
-        ${pi===0?'🔵 Low Match':'🔴 High Match'} · ${pair.p1.name} vs ${pair.p2.name}
-      </div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;min-width:500px;font-size:11px;">
-
-          <!-- HOLE NUMBER ROW with color coding -->
-          <tr style="background:rgba(0,0,0,.2);">
-            <td style="padding:5px 8px;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;min-width:85px;">Hole</td>
-            ${PARS.map((_,h)=>`<td style="text-align:center;padding:3px 2px;">
-              <div style="width:26px;height:26px;border-radius:6px;background:${holeBg(h)};border:1px solid ${holeBorder(h)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin:0 auto;">${h+1}</div>
-            </td>`).join('')}
-            <td style="padding:3px 6px;font-size:10px;font-weight:700;color:#888;text-align:center;">Tot</td>
-            <td style="padding:3px 6px;font-size:10px;font-weight:700;color:#888;text-align:center;">Adj</td>
-            <td style="padding:3px 6px;font-size:10px;font-weight:700;color:#888;text-align:center;">Pts</td>
-          </tr>
-
-          <!-- PAR ROW -->
-          <tr style="background:rgba(45,138,62,.06);">
-            <td style="padding:3px 8px;font-size:9px;color:#2d8a3e;font-weight:700;">Par</td>
-            ${PARS.map(p=>`<td style="text-align:center;font-size:10px;font-weight:700;color:#2d8a3e;padding:2px;">${p}</td>`).join('')}
-            <td style="text-align:center;font-size:10px;font-weight:700;color:#2d8a3e;">${PAR}</td>
-            <td></td><td></td>
-          </tr>
-
-          <!-- YARDS ROW -->
-          <tr style="background:rgba(0,0,0,.1);">
-            <td style="padding:3px 8px;font-size:9px;color:#555;">Yards</td>
-            ${YARDS.map(y=>`<td style="text-align:center;font-size:9px;color:#555;padding:2px;">${y}</td>`).join('')}
-            <td colspan="3"></td>
-          </tr>
-
-          <!-- HDCP ROW -->
-          <tr style="background:rgba(201,168,76,.04);border-bottom:1px solid rgba(255,255,255,.08);">
-            <td style="padding:3px 8px;font-size:9px;color:#c9a84c;">HDCP</td>
-            ${HDCPS.map(h2=>`<td style="text-align:center;font-size:9px;color:#c9a84c;padding:2px;">${h2}</td>`).join('')}
-            <td colspan="3"></td>
-          </tr>
-
-          <!-- PLAYER 1 GROSS ROW -->
-          <tr style="border-top:2px solid rgba(255,255,255,.1);">
-            <td style="padding:8px 8px 2px;">
-              <div style="font-size:11px;font-weight:600;color:#fff;">${pair.p1.name}${pair.p1.isSub?'<span style="background:#c9a84c;color:#0a2e12;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px;">SUB</span>':''}</div>
-              <div style="font-size:9px;color:#c9a84c;">HC ${pair.p1.hc}</div>
-              <button onclick="openSub(${pi},0)" style="margin-top:2px;padding:2px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.1);background:none;color:#666;font-size:9px;cursor:pointer;">${pair.p1.isSub?'✏️':'🔄'} Sub</button>
-            </td>
-            ${PARS.map((_,h)=>{
-              const g=sc1[h]; const gInt=parseInt(g)||0;
-              const s=p1s[h];
-              const diff2=gInt>0?gInt-PARS[h]:0;
-              const bg=gInt>0?(diff2<=-2?'#8B6914':diff2===-1?'#1a5c2a':diff2===0?'#1a3a6a':diff2===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';
-              return `<td style="text-align:center;padding:2px;position:relative;">
-                ${s>0?`<div style="position:absolute;top:0;right:0;width:8px;height:8px;border-radius:50%;background:#c9a84c;font-size:5px;font-weight:700;color:#0a2e12;display:flex;align-items:center;justify-content:center;z-index:1;">${s>1?s:''}</div>`:''}
-                <button onclick="openStep(${pi},0,${h})" style="width:28px;height:26px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:${bg};color:#fff;font-size:11px;font-weight:700;cursor:pointer;">${g||'·'}</button>
-              </td>`;
-            }).join('')}
-            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="gt-${pi}-0">${gross1||'—'}</td>
-            <td style="text-align:center;font-size:11px;font-weight:700;color:#e8cc7a;padding:2px 4px;" id="at-${pi}-0">${adjRow1.some(v=>v!==null)?adj1:'—'}</td>
-            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="pt-${pi}-0">—</td>
-          </tr>
-
-          <!-- PLAYER 1 ADJ ROW -->
-          <tr style="background:rgba(232,204,122,.04);border-bottom:1px solid rgba(255,255,255,.06);">
-            <td style="padding:2px 8px;font-size:9px;color:#888;">Adj Score</td>
-            ${PARS.map((_,h)=>{
-              const a=adjRow1[h];
-              const w=holeWinner[h];
-              const fc=w==='p1'?'#7ecf8e':w==='tie'?'#c9a84c':'#e8cc7a';
-              return `<td style="text-align:center;font-size:10px;font-weight:700;color:${fc};padding:2px;">${a!==null?a:'·'}</td>`;
-            }).join('')}
-            <td colspan="3"></td>
-          </tr>
-
-          <!-- PLAYER 2 GROSS ROW -->
-          <tr>
-            <td style="padding:8px 8px 2px;">
-              <div style="font-size:11px;font-weight:600;color:#fff;">${pair.p2.name}${pair.p2.isSub?'<span style="background:#c9a84c;color:#0a2e12;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px;">SUB</span>':''}</div>
-              <div style="font-size:9px;color:#c9a84c;">HC ${pair.p2.hc}</div>
-              <button onclick="openSub(${pi},1)" style="margin-top:2px;padding:2px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.1);background:none;color:#666;font-size:9px;cursor:pointer;">${pair.p2.isSub?'✏️':'🔄'} Sub</button>
-            </td>
-            ${PARS.map((_,h)=>{
-              const g=sc2[h]; const gInt=parseInt(g)||0;
-              const s=p2s[h];
-              const diff2=gInt>0?gInt-PARS[h]:0;
-              const bg=gInt>0?(diff2<=-2?'#8B6914':diff2===-1?'#1a5c2a':diff2===0?'#1a3a6a':diff2===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';
-              return `<td style="text-align:center;padding:2px;position:relative;">
-                ${s>0?`<div style="position:absolute;top:0;right:0;width:8px;height:8px;border-radius:50%;background:#c9a84c;font-size:5px;font-weight:700;color:#0a2e12;display:flex;align-items:center;justify-content:center;z-index:1;">${s>1?s:''}</div>`:''}
-                <button onclick="openStep(${pi},1,${h})" style="width:28px;height:26px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:${bg};color:#fff;font-size:11px;font-weight:700;cursor:pointer;">${g||'·'}</button>
-              </td>`;
-            }).join('')}
-            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="gt-${pi}-1">${gross2||'—'}</td>
-            <td style="text-align:center;font-size:11px;font-weight:700;color:#e8cc7a;padding:2px 4px;" id="at-${pi}-1">${adjRow2.some(v=>v!==null)?adj2:'—'}</td>
-            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="pt-${pi}-1">—</td>
-          </tr>
-
-          <!-- PLAYER 2 ADJ ROW -->
-          <tr style="background:rgba(232,204,122,.04);">
-            <td style="padding:2px 8px;font-size:9px;color:#888;">Adj Score</td>
-            ${PARS.map((_,h)=>{
-              const a=adjRow2[h];
-              const w=holeWinner[h];
-              const fc=w==='p2'?'#7ecf8e':w==='tie'?'#c9a84c':'#e8cc7a';
-              return `<td style="text-align:center;font-size:10px;font-weight:700;color:${fc};padding:2px;">${a!==null?a:'·'}</td>`;
-            }).join('')}
-            <td colspan="3"></td>
-          </tr>
-
-          <!-- LEGEND ROW -->
-          <tr style="background:rgba(0,0,0,.15);border-top:1px solid rgba(255,255,255,.06);">
-            <td colspan="12" style="padding:6px 8px;">
-              <div style="display:flex;gap:12px;font-size:9px;align-items:center;">
-                <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:3px;background:#1a4a1a;border:1px solid #2d8a3e;"></div><span style="color:#888;">${pair.p1.name.split(' ')[0]} wins</span></div>
-                <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:3px;background:#1a2a4a;border:1px solid #2563eb;"></div><span style="color:#888;">${pair.p2.name.split(' ')[0]} wins</span></div>
-                <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:3px;background:#3a3a2a;border:1px solid #c9a84c;"></div><span style="color:#888;">Tie ½ pt each</span></div>
-                <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#c9a84c;"></div><span style="color:#888;">Stroke given</span></div>
-              </div>
-            </td>
-          </tr>
-
-        </table>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Points bar
-  let ptsHtml = `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:14px;">
-    <div style="padding:10px 14px;background:rgba(201,168,76,.08);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;">⚡ Live Points</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;">
-      <div style="padding:14px 16px;border-right:1px solid rgba(255,255,255,.05);">
-        <div style="font-size:10px;color:#888;margin-bottom:4px;">Team ${teamA.id}</div>
-        <div style="font-size:28px;font-weight:700;color:#c9a84c;" id="pts-a">0</div>
-        <div style="font-size:10px;color:#888;" id="pts-a-detail">—</div>
-      </div>
-      <div style="padding:14px 16px;">
-        <div style="font-size:10px;color:#888;margin-bottom:4px;">Team ${teamB.id}</div>
-        <div style="font-size:28px;font-weight:700;color:#c9a84c;" id="pts-b">0</div>
-        <div style="font-size:10px;color:#888;" id="pts-b-detail">—</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(9,1fr);gap:2px;padding:8px;" id="hole-chips"></div>
-  </div>`;
-
-  el.innerHTML = `<button onclick="selectWeek(${selWeek.id})" style="background:none;border:none;color:#888;cursor:pointer;padding:6px 0;font-size:12px;margin-bottom:10px;">← Back to Matchups</button>
-    <div style="background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px;margin-bottom:14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;text-align:center;">
-      <div><div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM ${teamA.id}</div><div style="font-size:12px;">${teamA.player1_name}</div><div style="font-size:12px;">${teamA.player2_name}</div></div>
-      <div style="font-size:10px;font-weight:700;color:#c9a84c;">VS</div>
-      <div><div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM ${teamB.id}</div><div style="font-size:12px;">${teamB.player1_name}</div><div style="font-size:12px;">${teamB.player2_name}</div></div>
-    </div>
-    ${strokeHtml}
-    ${cardHtml}
-    ${ptsHtml}
-    <div id="card-status"></div>
-    <button onclick="submitCard()" id="sub-btn" style="width:100%;padding:14px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;">Submit Scorecard ✓</button>
-    <button onclick="selectWeek(${selWeek.id})" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>`;
-  
-  updatePoints();
-  saveProgress();
-}
-
-// ── STEPPER ───────────────────────────────────────────────────────
-function openStep(pi, pli, h) {
-  stepCtx = {pi,pli,h};
-  const cur = parseInt(scores[pi][pli][h]) || PARS[h];
-  const p = pli===0?pairs[pi].p1:pairs[pi].p2;
-  const existing = document.getElementById('stepper-overlay');
-  if (existing) existing.remove();
-  
-  const div = document.createElement('div');
-  div.id = 'stepper-overlay';
-  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;';
-  div.onclick = e => { if(e.target===div) closeStep(); };
-  div.innerHTML = `<div style="background:#1a3a1a;border:1px solid rgba(201,168,76,.4);border-radius:16px;padding:22px;min-width:200px;text-align:center;">
-    <div style="font-size:12px;color:#888;margin-bottom:3px;">${p.name}</div>
-    <div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:14px;">Hole ${h+1} · Par ${PARS[h]} · HDCP ${HDCPS[h]} · ${YARDS[h]}yds</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:16px;">
-      <button onclick="adjustStep(-1)" style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:22px;cursor:pointer;">−</button>
-      <div id="step-val" style="font-size:38px;font-weight:700;color:#fff;min-width:50px;">${cur}</div>
-      <button onclick="adjustStep(1)" style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:22px;cursor:pointer;">+</button>
-    </div>
-    <div id="step-diff" style="font-size:12px;color:#888;margin-top:8px;"></div>
-    <button onclick="confirmStep()" style="width:100%;margin-top:14px;padding:12px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-weight:700;font-size:14px;cursor:pointer;">Done ✓</button>
-  </div>`;
-  document.body.appendChild(div);
-  updateStepDiff(cur);
-}
-
-function adjustStep(d) {
-  const el = document.getElementById('step-val');
-  const v = Math.max(1, parseInt(el.textContent)+d);
-  el.textContent = v;
-  updateStepDiff(v);
-}
-
-function updateStepDiff(v) {
-  const {h} = stepCtx;
-  const d = v - PARS[h];
-  const labels = {[-2]:'Eagle 🦅',[-1]:'Birdie 🐦',[0]:'Par',[1]:'Bogey',[2]:'Double'};
-  const label = labels[d]||(d<-2?'Albatross':'Triple+');
-  const color = d<0?'#7ecf8e':d===0?'#93c5fd':d===1?'#fcd34d':'#fca5a5';
-  const el = document.getElementById('step-diff');
-  if (el) el.innerHTML = `<span style="color:${color}">${d===0?'E':d>0?'+'+d:d} · ${label}</span>`;
-}
-
-function confirmStep() {
-  const {pi,pli,h} = stepCtx;
-  scores[pi][pli][h] = parseInt(document.getElementById('step-val').textContent);
-  closeStep();
-  renderScorecard();
-  saveProgress();
-}
-
-function closeStep() {
-  const el = document.getElementById('stepper-overlay');
-  if (el) el.remove();
-}
-
-// ── SUB MODAL ─────────────────────────────────────────────────────
-function openSub(pi, pli) {
-  subCtx = {pi,pli};
-  const existing = document.getElementById('sub-overlay');
-  if (existing) existing.remove();
-  
-  const div = document.createElement('div');
-  div.id = 'sub-overlay';
-  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:flex-end;justify-content:center;';
-  div.innerHTML = `<div style="background:#0f3d1a;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:640px;max-height:80vh;overflow-y:auto;">
-    <div style="font-size:17px;font-weight:700;color:#c9a84c;margin-bottom:14px;">🔄 Select Sub</div>
-    ${SUBS.map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06);">
-      <div><div style="font-size:13px;color:#fff;">${s.name}</div><div style="font-size:11px;color:#c9a84c;">HC ${s.hc_start}</div></div>
-      <button onclick="pickSub(${s.id},'${s.name.replace(/'/g,"\\'")}',${s.hc_start})" style="padding:6px 14px;border-radius:8px;border:none;background:#c9a84c;color:#0a2e12;font-weight:700;cursor:pointer;font-size:13px;">Select</button>
-    </div>`).join('')}
-    <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,.1);padding-top:14px;">
-      <div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:10px;">➕ Add New Sub</div>
-      <input id="ns-name" placeholder="Full name" style="width:100%;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;margin-bottom:8px;">
-      <input id="ns-hc" type="number" min="0" max="18" placeholder="Starting HC (0-18)" style="width:100%;padding:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;margin-bottom:10px;">
-      <button onclick="addSub()" style="width:100%;padding:12px;border-radius:8px;border:none;background:#c9a84c;color:#0a2e12;font-weight:700;font-size:14px;cursor:pointer;">Add & Select</button>
-    </div>
-    <button onclick="closeSub()" style="width:100%;margin-top:10px;padding:12px;border-radius:8px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:14px;cursor:pointer;">Cancel</button>
-  </div>`;
-  document.body.appendChild(div);
-}
-
-function pickSub(subId, name, hc) {
-  const {pi,pli} = subCtx;
-  const newHC = prompt(`${name}'s HC is ${hc}. Enter HC for this week (or OK to keep ${hc}):`, hc);
-  const finalHC = newHC !== null ? Math.min(18,Math.max(0,parseInt(newHC)||hc)) : hc;
-  const p = pli===0?pairs[pi].p1:pairs[pi].p2;
-  p.name=name; p.hc=finalHC; p.isSub=true; p.subId=subId;
-  // Re-sort all pairs
-  const allA = [pairs[0].p1,pairs[1].p1].sort((a,b)=>a.hc-b.hc);
-  const allB = [pairs[0].p2,pairs[1].p2].sort((a,b)=>a.hc-b.hc);
-  pairs[0].p1=allA[0]; pairs[1].p1=allA[1];
-  pairs[0].p2=allB[0]; pairs[1].p2=allB[1];
-  scores = [[Array(9).fill(''),Array(9).fill('')],[Array(9).fill(''),Array(9).fill('')]];
-  closeSub();
-  renderScorecard();
-}
-
-async function addSub() {
-  const name = document.getElementById('ns-name').value.trim();
-  const hcVal = document.getElementById('ns-hc').value;
-  if (!name) { alert('Enter name'); return; }
-  const hc = hcVal ? Math.min(18,Math.max(0,parseInt(hcVal))) : 18;
-  try {
-    const res = await post('subs', {name, hc_start:hc});
-    const newSub = res[0];
-    SUBS.push(newSub);
-    SUBS.sort((a,b)=>a.name.localeCompare(b.name));
-    pickSub(newSub.id, name, hc);
-  } catch(e) { alert('Error: '+e.message); }
-}
-
-function closeSub() { const el=document.getElementById('sub-overlay'); if(el) el.remove(); }
-
-// ── POINTS ────────────────────────────────────────────────────────
-function getAdj(pi, pli, h) {
-  const g = parseInt(scores[pi][pli][h])||0;
-  if (!g) return null;
-  const p = pli===0?pairs[pi].p1:pairs[pi].p2;
-  const opp = pli===0?pairs[pi].p2:pairs[pi].p1;
-  const strks = p.hc>opp.hc ? calcStrokes(p.hc,opp.hc) : Array(9).fill(0);
-  return g - strks[h];
-}
-
-function getAdjTotal(pi, pli) {
-  let t=0;
-  for(let h=0;h<9;h++){const a=getAdj(pi,pli,h);if(a===null)return null;t+=a;}
-  return t;
-}
-
-function updatePoints() {
+function getAdjTot(pi,pli,sc2){let t=0;for(let h=0;h<9;h++){const a=getAdj(pi,pli,h,sc2);if(a===null)return null;t+=a;}return t;}
+function calcPts(sc2){
   let aH=0,bH=0,aI=0,bI=0,aT=0,bT=0;
-  const chips = Array(9).fill('');
-  
-  pairs.forEach((pair,pi) => {
-    for(let h=0;h<9;h++){
-      const a=getAdj(pi,0,h),b=getAdj(pi,1,h);
-      if(a===null||b===null) continue;
-      if(a<b){aH+=1;chips[h]+='a';}else if(b<a){bH+=1;chips[h]+='b';}else{aH+=.5;bH+=.5;chips[h]+='t';}
-    }
-    const at=getAdjTotal(pi,0),bt=getAdjTotal(pi,1);
+  pairs.forEach((pair,pi)=>{
+    for(let h=0;h<9;h++){const a=getAdj(pi,0,h,sc2),b=getAdj(pi,1,h,sc2);if(a===null||b===null)continue;if(a<b)aH+=1;else if(b<a)bH+=1;else{aH+=.5;bH+=.5;}}
+    const at=getAdjTot(pi,0,sc2),bt=getAdjTot(pi,1,sc2);
     if(at!==null&&bt!==null){if(at<bt)aI+=1;else if(bt<at)bI+=1;else{aI+=.5;bI+=.5;}}
   });
-  
-  const aT0=getAdjTotal(0,0),aT1=getAdjTotal(1,0),bT0=getAdjTotal(0,1),bT1=getAdjTotal(1,1);
-  if(aT0!==null&&aT1!==null&&bT0!==null&&bT1!==null){
-    const aC=aT0+aT1,bC=bT0+bT1;
-    if(aC<bC)aT=1;else if(bC<aC)bT=1;else{aT=.5;bT=.5;}
+  const aT0=getAdjTot(0,0,sc2),aT1=getAdjTot(1,0,sc2),bT0=getAdjTot(0,1,sc2),bT1=getAdjTot(1,1,sc2);
+  if(aT0!==null&&aT1!==null&&bT0!==null&&bT1!==null){const aC=aT0+aT1,bC=bT0+bT1;if(aC<bC)aT=1;else if(bC<aC)bT=1;else{aT=.5;bT=.5;}}
+  return{aH,bH,aI,bI,aT,bT,aTotal:aH+aI+aT,bTotal:bH+bI+bT};
+}
+
+async function init(){
+  try{
+    dbg('Loading teams...');
+    const teams=await get('teams?order=id');
+    teams.forEach(t=>T[t.id]=t);
+    W=await get('weeks?order=week_number');
+    S=await get('subs?order=name');
+    dbg('Ready!');
+    setTimeout(()=>{const e=document.getElementById('dbg');if(e)e.style.display='none';},2000);
+    renderWeeks();renderSch();renderSubs();renderLb();
+    try{
+      const sv=JSON.parse(localStorage.getItem('gp')||'null');
+      if(sv&&sv.mid&&(Date.now()-sv.ts)<86400000){
+        if(confirm('Resume unfinished scorecard?\nTeam '+sv.tAid+' vs Team '+sv.tBid+' - Week '+sv.wn)){
+          selW=W.find(w=>w.id===sv.wid)||{id:sv.wid,week_number:sv.wn};
+          selM={id:sv.mid};tA=T[sv.tAid];tB=T[sv.tBid];pairs=sv.pairs;sc=sv.sc;
+          renderCard();
+        }else localStorage.removeItem('gp');
+      }
+    }catch(e){}
+  }catch(e){
+    dbg('Error: '+e.message);
+    document.getElementById('sc-body').innerHTML='<div class="err">Failed to connect: '+e.message+'</div>';
   }
-  
-  const fmt=v=>v%1===0?String(v):v.toFixed(1);
-  const aTotal=aH+aI+aT, bTotal=bH+bI+bT;
-  
-  const pA=document.getElementById('pts-a'),pB=document.getElementById('pts-b');
-  const dA=document.getElementById('pts-a-detail'),dB=document.getElementById('pts-b-detail');
-  const hc=document.getElementById('hole-chips');
-  if(pA) pA.textContent=fmt(aTotal);
-  if(pB) pB.textContent=fmt(bTotal);
-  if(dA) dA.textContent=`${fmt(aH)} hole · ${fmt(aI)} match · ${fmt(aT)} team`;
-  if(dB) dB.textContent=`${fmt(bH)} hole · ${fmt(bI)} match · ${fmt(bT)} team`;
-  if(hc) hc.innerHTML=chips.map((r,h)=>{
-    let cls='rgba(255,255,255,.05)',fc='rgba(255,255,255,.2)',lbl='·';
-    if(r.includes('a')&&r.includes('b')){cls='rgba(201,168,76,.2)';fc='#c9a84c';lbl='SPL';}
-    else if(r==='a'||r==='aa'){cls='rgba(45,138,62,.3)';fc='#7ecf8e';lbl=`T${teamA.id}`;}
-    else if(r==='b'||r==='bb'){cls='rgba(41,128,185,.3)';fc='#93c5fd';lbl=`T${teamB.id}`;}
-    else if(r.includes('t')){cls='rgba(201,168,76,.2)';fc='#c9a84c';lbl='TIE';}
-    return `<div style="text-align:center;"><div style="font-size:9px;color:#555;">H${h+1}</div><div style="font-size:9px;font-weight:700;padding:2px 3px;border-radius:4px;background:${cls};color:${fc};margin-top:1px;">${lbl}</div></div>`;
+}
+
+function renderWeeks(){
+  const el=document.getElementById('sc-body');
+  const avail=W.filter(w=>wkSt(w.date)!=='up');
+  if(!avail.length){el.innerHTML='<div class="info">No weeks available yet</div>';return;}
+  el.innerHTML=avail.map(w=>{
+    const s=wkSt(w.date);
+    const d=new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const badge=s==='now'?' <span style="background:#c9a84c;color:#0a2e12;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;">This Week</span>':'';
+    return '<button onclick="selWeek('+w.id+')" style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#f8f4e8;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px;text-align:left;"><span>Week '+w.week_number+badge+'</span><span style="color:#888;font-size:12px;">'+d+' ›</span></button>';
   }).join('');
-  
-  // Update player point totals
-  pairs.forEach((pair,pi) => {
-    let p1H=0,p2H=0;
-    for(let h=0;h<9;h++){
-      const a=getAdj(pi,0,h),b=getAdj(pi,1,h);
-      if(a===null||b===null)continue;
-      if(a<b)p1H+=1;else if(b<a)p2H+=1;else{p1H+=.5;p2H+=.5;}
+}
+
+async function selWeek(wid){
+  selW=W.find(w=>w.id===wid);
+  const [matchups,submitted]=await Promise.all([get('matchups?week_id=eq.'+wid+'&order=id'),get('matchups?week_id=eq.'+wid+'&status=eq.submitted&select=id')]);
+  const submittedIds=new Set(submitted.map(m=>m.id));
+  const el=document.getElementById('sc-body');
+  let html='<button onclick="renderWeeks()" style="background:none;border:none;color:#888;cursor:pointer;padding:8px 0;font-size:13px;display:block;margin-bottom:10px;">← Back to Weeks</button>';
+  html+='<div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:12px;">Week '+selW.week_number+' — Select Matchup</div>';
+  matchups.forEach(m=>{
+    const ta=T[m.team_a_id],tb=T[m.team_b_id];if(!ta||!tb)return;
+    const done=submittedIds.has(m.id);
+    const ap=[{n:ta.player1_name,h:ta.player1_hc_start},{n:ta.player2_name,h:ta.player2_hc_start}].sort((a,b)=>a.h-b.h);
+    const bp=[{n:tb.player1_name,h:tb.player1_hc_start},{n:tb.player2_name,h:tb.player2_hc_start}].sort((a,b)=>a.h-b.h);
+    html+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px;margin-bottom:10px;">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:13px;font-weight:700;color:#fff;">Team '+ta.id+' vs Team '+tb.id+'</div>';
+    html+='<span style="font-size:10px;color:'+(done?'#2ecc71':'#c9a84c')+';">'+(done?'Submitted':'Not submitted')+'</span></div>';
+    html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;">';
+    html+='<div><div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM '+ta.id+'</div><div style="font-size:11px;">'+ta.player1_name+'</div><div style="font-size:11px;">'+ta.player2_name+'</div></div>';
+    html+='<div style="width:26px;height:26px;border-radius:50%;background:rgba(201,168,76,.15);border:1px solid #c9a84c44;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#c9a84c;">VS</div>';
+    html+='<div style="text-align:right;"><div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM '+tb.id+'</div><div style="font-size:11px;">'+tb.player1_name+'</div><div style="font-size:11px;">'+tb.player2_name+'</div></div></div>';
+    [0,1].forEach(i=>{
+      html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;padding:5px 8px;background:rgba(255,255,255,.03);border-radius:6px;'+(i===0?'margin-bottom:4px':'')+'"><span style="font-size:10px;">'+ap[i].n+' <span style="color:#c9a84c;">('+ap[i].h+')</span></span><span style="font-size:9px;color:'+(i===0?'#93c5fd':'#fca5a5')+';text-align:center;">'+(i===0?'🔵 Low':'🔴 High')+'</span><span style="font-size:10px;text-align:right;">'+bp[i].n+' <span style="color:#c9a84c;">('+bp[i].h+')</span></span></div>';
+    });
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">';
+    if(done){
+      html+='<button onclick="viewCard('+m.id+','+m.team_a_id+','+m.team_b_id+')" class="btn2" style="margin:0;font-size:12px;">👁 View Card</button>';
+      html+='<button onclick="openMatchup('+m.id+','+m.team_a_id+','+m.team_b_id+')" class="btn" style="margin:0;font-size:12px;">+ New Entry</button>';
+    }else{
+      html+='<button onclick="openMatchup('+m.id+','+m.team_a_id+','+m.team_b_id+')" class="btn" style="margin:0;grid-column:1/-1;">Enter Scorecard →</button>';
     }
-    const at2=getAdjTotal(pi,0),bt2=getAdjTotal(pi,1);
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+async function viewCard(mid,taId,tbId){
+  const el=document.getElementById('sc-body');
+  el.innerHTML='<div class="ld"><div class="spin"></div>Loading...</div>';
+  try{
+    const [scores,pts]=await Promise.all([get('scores?matchup_id=eq.'+mid+'&order=id'),get('points?matchup_id=eq.'+mid)]);
+    const pA=pts.find(p=>p.team_id===taId),pB=pts.find(p=>p.team_id===tbId);
+    let html='<button onclick="selWeek('+selW.id+')" style="background:none;border:none;color:#888;cursor:pointer;padding:8px 0;font-size:13px;display:block;margin-bottom:10px;">← Back</button>';
+    html+='<div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:4px;">Week '+selW.week_number+' Scorecard</div>';
+    html+='<div style="font-size:12px;color:#888;margin-bottom:14px;">Team '+taId+' vs Team '+tbId+' · Read Only</div>';
+    html+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:14px;">';
+    html+='<div style="padding:10px 14px;background:rgba(201,168,76,.08);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;">Final Points</div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;">';
+    html+='<div style="padding:14px 16px;border-right:1px solid rgba(255,255,255,.05);"><div style="font-size:10px;color:#888;margin-bottom:4px;">Team '+taId+'</div><div style="font-size:28px;font-weight:700;color:#c9a84c;">'+fmt(pA&&pA.week_total)+'</div></div>';
+    html+='<div style="padding:14px 16px;"><div style="font-size:10px;color:#888;margin-bottom:4px;">Team '+tbId+'</div><div style="font-size:28px;font-weight:700;color:#c9a84c;">'+fmt(pB&&pB.week_total)+'</div></div></div></div>';
+    if(scores.length){
+      html+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:14px;">';
+      html+='<div style="padding:10px 14px;background:rgba(201,168,76,.08);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;">Hole by Hole Scores</div>';
+      scores.forEach(s=>{
+        const holes=[s.h1,s.h2,s.h3,s.h4,s.h5,s.h6,s.h7,s.h8,s.h9];
+        html+='<div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);">';
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+        html+='<div><div style="font-size:13px;font-weight:600;color:#fff;">'+s.player_name+(s.is_sub?'<span style="background:#c9a84c;color:#0a2e12;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:4px;">SUB</span>':'')+'</div>';
+        html+='<div style="font-size:10px;color:#c9a84c;">Team '+s.team_id+' · HC '+s.hc_used+'</div></div>';
+        html+='<div style="text-align:right;"><div style="font-size:11px;color:#888;">Gross: <span style="color:#fff;font-weight:700;">'+s.gross_total+'</span></div>';
+        html+='<div style="font-size:11px;color:#888;">Adj: <span style="color:#e8cc7a;font-weight:700;">'+s.net_total+'</span></div></div></div>';
+        html+='<div style="display:flex;gap:3px;flex-wrap:wrap;">';
+        holes.forEach((h,i)=>{
+          const hi=parseInt(h)||0;const d2=hi>0?hi-PARS[i]:0;
+          const bg=hi>0?(d2<=-2?'#8B6914':d2===-1?'#1a5c2a':d2===0?'#1a3a6a':d2===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';
+          html+='<div style="text-align:center;"><div style="font-size:8px;color:#555;">H'+(i+1)+'</div><div style="width:26px;height:24px;border-radius:5px;background:'+bg+';border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">'+(h||'--')+'</div></div>';
+        });
+        html+='</div></div>';
+      });
+      html+='</div>';
+    }
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div class="err">Error: '+e.message+'</div>';}
+}
+
+async function getHC(tid,slot){
+  try{const r=await get('handicaps?team_id=eq.'+tid+'&player_slot=eq.'+slot+'&order=week_id.desc&limit=1');if(r&&r.length)return r[0].hc_after;}catch(e){}
+  const t=T[tid];return slot==='p1'?t.player1_hc_start:t.player2_hc_start;
+}
+
+async function openMatchup(mid,taId,tbId){
+  document.getElementById('dbg').style.display='block';
+  dbg('Loading current handicaps...');
+  selM={id:mid};tA=T[taId];tB=T[tbId];
+  const[a1,a2,b1,b2]=await Promise.all([getHC(taId,'p1'),getHC(taId,'p2'),getHC(tbId,'p1'),getHC(tbId,'p2')]);
+  const aT=[{teamId:taId,slot:'p1',name:tA.player1_name,hc:a1,isSub:false,subId:null},{teamId:taId,slot:'p2',name:tA.player2_name,hc:a2,isSub:false,subId:null}].sort((a,b)=>a.hc-b.hc);
+  const bT=[{teamId:tbId,slot:'p1',name:tB.player1_name,hc:b1,isSub:false,subId:null},{teamId:tbId,slot:'p2',name:tB.player2_name,hc:b2,isSub:false,subId:null}].sort((a,b)=>a.hc-b.hc);
+  pairs=[{p1:aT[0],p2:bT[0]},{p1:aT[1],p2:bT[1]}];
+  sc=[[Array(9).fill(''),Array(9).fill('')],[Array(9).fill(''),Array(9).fill('')]];
+  setTimeout(()=>{const e=document.getElementById('dbg');if(e)e.style.display='none';},1500);
+  renderCard();saveProg();
+}
+
+function renderCard(){
+  const el=document.getElementById('sc-body');
+  const pts=calcPts();
+  let sHtml='<div style="margin-bottom:14px;"><div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;margin-bottom:8px;">Stroke Allocation</div>';
+  pairs.forEach((pair,pi)=>{
+    const d=Math.abs(pair.p1.hc-pair.p2.hc);
+    if(d===0){sHtml+='<div style="padding:7px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px;font-size:12px;color:#888;">'+(pi===0?'Low':'High')+': Equal HCs - no strokes given</div>';return;}
+    const hi=pair.p1.hc>pair.p2.hc?pair.p1:pair.p2,lo=pair.p1.hc>pair.p2.hc?pair.p2:pair.p1;
+    const st2=calcSt(hi.hc,lo.hc);
+    const chips=st2.map((s,h)=>s>0?'<span style="background:rgba(201,168,76,.2);border:1px solid #c9a84c44;border-radius:5px;padding:2px 5px;font-size:10px;margin:1px;">H'+(h+1)+(s>1?' x2':'')+'</span>':'').join('');
+    sHtml+='<div style="padding:8px 10px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:5px;"><div style="font-size:11px;font-weight:600;color:#fff;margin-bottom:4px;">'+(pi===0?'Low':'High')+': '+hi.name+' (HC '+hi.hc+') gets '+d+' stroke'+(d!==1?'s':'')+'</div><div style="display:flex;flex-wrap:wrap;gap:2px;">'+chips+'</div></div>';
+  });
+  sHtml+='</div>';
+
+  let cards='';
+  pairs.forEach((pair,pi)=>{
+    const p1st=pair.p1.hc>pair.p2.hc?calcSt(pair.p1.hc,pair.p2.hc):Array(9).fill(0);
+    const p2st=pair.p2.hc>pair.p1.hc?calcSt(pair.p2.hc,pair.p1.hc):Array(9).fill(0);
+    const adj1=PARS.map((_,h)=>{const g=parseInt(sc[pi][0][h])||0;return g>0?g-p1st[h]:null;});
+    const adj2=PARS.map((_,h)=>{const g=parseInt(sc[pi][1][h])||0;return g>0?g-p2st[h]:null;});
+    const hw=PARS.map((_,h)=>{const a=adj1[h],b=adj2[h];if(a===null||b===null)return'';if(a<b)return'p1';if(b<a)return'p2';return'tie';});
+    const gross1=sc[pi][0].reduce((s,v)=>s+(parseInt(v)||0),0);
+    const gross2=sc[pi][1].reduce((s,v)=>s+(parseInt(v)||0),0);
+    const tot1=adj1.reduce((s,v)=>s+(v!==null?v:0),0),tot2=adj2.reduce((s,v)=>s+(v!==null?v:0),0);
+    const ha1=adj1.some(v=>v!==null),ha2=adj2.some(v=>v!==null);
+    const hbg=h=>{const w=hw[h];if(w==='p1')return'#1a4a1a';if(w==='p2')return'#1a2a4a';if(w==='tie')return'#3a3a1a';return'rgba(255,255,255,.04)';};
+    const hbc=h=>{const w=hw[h];if(w==='p1')return'#2d8a3e';if(w==='p2')return'#2563eb';if(w==='tie')return'#c9a84c';return'rgba(255,255,255,.1)';};
+    let p1H=0,p2H=0;
+    for(let h=0;h<9;h++){const a=adj1[h],b=adj2[h];if(a===null||b===null)continue;if(a<b)p1H+=1;else if(b<a)p2H+=1;else{p1H+=.5;p2H+=.5;}}
+    const at2=getAdjTot(pi,0),bt2=getAdjTot(pi,1);
     let p1I=0,p2I=0;
     if(at2!==null&&bt2!==null){if(at2<bt2)p1I=1;else if(bt2<at2)p2I=1;else{p1I=.5;p2I=.5;}}
-    const el0=document.getElementById(`pt-${pi}-0`),el1=document.getElementById(`pt-${pi}-1`);
-    if(el0)el0.textContent=fmt(p1H+p1I);
-    if(el1)el1.textContent=fmt(p2H+p2I);
-    // Update totals
-    [0,1].forEach(pli=>{
-      const sc=scores[pi][pli];
-      const g=sc.reduce((s,v)=>s+(parseInt(v)||0),0);
-      const strks=pli===0?(pairs[pi].p1.hc>pairs[pi].p2.hc?calcStrokes(pairs[pi].p1.hc,pairs[pi].p2.hc):Array(9).fill(0)):(pairs[pi].p2.hc>pairs[pi].p1.hc?calcStrokes(pairs[pi].p2.hc,pairs[pi].p1.hc):Array(9).fill(0));
-      const adj=sc.reduce((s,v,h)=>{const gv=parseInt(v)||0;return s+(gv>0?gv-strks[h]:0);},0);
-      const gt=document.getElementById(`gt-${pi}-${pli}`),at3=document.getElementById(`at-${pi}-${pli}`);
-      if(gt)gt.textContent=g||'—';
-      if(at3)at3.textContent=adj||'—';
-    });
+    cards+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:14px;">';
+    cards+='<div style="padding:8px 12px;background:'+(pi===0?'linear-gradient(135deg,#1a4a8a,#1a3a6a)':'linear-gradient(135deg,#8a1a1a,#6a1a1a)')+';font-size:12px;font-weight:700;color:#fff;">'+(pi===0?'Low Match':'High Match')+' - '+pair.p1.name+' vs '+pair.p2.name+'</div>';
+    cards+='<div class="sc-wrap"><table class="sc-table">';
+    cards+='<tr style="background:rgba(0,0,0,.2);"><td class="lbl" style="color:#888;font-size:9px;">Hole</td>';
+    PARS.forEach((_,h)=>{cards+='<td><div style="width:26px;height:26px;border-radius:6px;background:'+hbg(h)+';border:1px solid '+hbc(h)+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;margin:0 auto;">'+(h+1)+'</div></td>';});
+    cards+='<td style="font-size:9px;color:#888;">Tot</td><td style="font-size:9px;color:#888;">Adj</td><td style="font-size:9px;color:#888;">Pts</td></tr>';
+    cards+='<tr style="background:rgba(45,138,62,.06);"><td class="lbl" style="color:#2d8a3e;font-weight:700;">Par</td>';
+    PARS.forEach(p=>{cards+='<td style="color:#2d8a3e;font-weight:700;">'+p+'</td>';});
+    cards+='<td style="color:#2d8a3e;font-weight:700;">'+PAR+'</td><td></td><td></td></tr>';
+    cards+='<tr style="background:rgba(0,0,0,.1);"><td class="lbl" style="color:#555;">Yards</td>';
+    YARDS.forEach(y=>{cards+='<td style="color:#555;font-size:9px;">'+y+'</td>';});
+    cards+='<td colspan="3"></td></tr>';
+    cards+='<tr style="background:rgba(201,168,76,.04);border-bottom:1px solid rgba(255,255,255,.08);"><td class="lbl" style="color:#c9a84c;">HDCP</td>';
+    HDCPS.forEach(h=>{cards+='<td style="color:#c9a84c;font-size:9px;">'+h+'</td>';});
+    cards+='<td colspan="3"></td></tr>';
+    // P1 gross row
+    cards+='<tr style="border-top:2px solid rgba(255,255,255,.1);"><td class="lbl" style="padding:8px 4px 2px 8px;"><div style="font-size:11px;font-weight:600;color:#fff;">'+pair.p1.name+(pair.p1.isSub?'<span style="background:#c9a84c;color:#0a2e12;font-size:7px;padding:1px 3px;border-radius:3px;margin-left:3px;">SUB</span>':'')+'</div><div style="font-size:9px;color:#c9a84c;">HC '+pair.p1.hc+'</div><button onclick="openSub('+pi+',0)" style="padding:2px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.1);background:none;color:#666;font-size:9px;cursor:pointer;margin-top:2px;">'+(pair.p1.isSub?'Edit':'Sub')+'</button></td>';
+    PARS.forEach((_,h)=>{const g=sc[pi][0][h];const gi=parseInt(g)||0;const s=p1st[h];const df=gi>0?gi-PARS[h]:0;const bg=gi>0?(df<=-2?'#8B6914':df===-1?'#1a5c2a':df===0?'#1a3a6a':df===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';cards+='<td style="position:relative;">'+(s>0?'<div class="sdot">'+(s>1?s:'')+'</div>':'')+'<button class="hbtn" onclick="openStep('+pi+',0,'+h+')" style="background:'+bg+';">'+(g||'.')+'</button></td>';});
+    cards+='<td style="font-size:11px;font-weight:700;color:#c9a84c;">'+(gross1||'--')+'</td><td style="font-size:11px;font-weight:700;color:#e8cc7a;">'+(ha1?tot1:'--')+'</td><td style="font-size:11px;font-weight:700;color:#c9a84c;">'+fmt(p1H+p1I)+'</td></tr>';
+    // P1 adj row
+    cards+='<tr style="background:rgba(232,204,122,.03);border-bottom:1px solid rgba(255,255,255,.06);"><td class="lbl" style="font-size:9px;color:#888;padding:2px 4px 2px 8px;">Adj</td>';
+    adj1.forEach((a,h)=>{const w=hw[h];const c=w==='p1'?'#7ecf8e':w==='tie'?'#c9a84c':'#e8cc7a';cards+='<td style="font-size:10px;font-weight:700;color:'+c+';">'+(a!==null?a:'.')+'</td>';});
+    cards+='<td colspan="3"></td></tr>';
+    // P2 gross row
+    cards+='<tr><td class="lbl" style="padding:8px 4px 2px 8px;"><div style="font-size:11px;font-weight:600;color:#fff;">'+pair.p2.name+(pair.p2.isSub?'<span style="background:#c9a84c;color:#0a2e12;font-size:7px;padding:1px 3px;border-radius:3px;margin-left:3px;">SUB</span>':'')+'</div><div style="font-size:9px;color:#c9a84c;">HC '+pair.p2.hc+'</div><button onclick="openSub('+pi+',1)" style="padding:2px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.1);background:none;color:#666;font-size:9px;cursor:pointer;margin-top:2px;">'+(pair.p2.isSub?'Edit':'Sub')+'</button></td>';
+    PARS.forEach((_,h)=>{const g=sc[pi][1][h];const gi=parseInt(g)||0;const s=p2st[h];const df=gi>0?gi-PARS[h]:0;const bg=gi>0?(df<=-2?'#8B6914':df===-1?'#1a5c2a':df===0?'#1a3a6a':df===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';cards+='<td style="position:relative;">'+(s>0?'<div class="sdot">'+(s>1?s:'')+'</div>':'')+'<button class="hbtn" onclick="openStep('+pi+',1,'+h+')" style="background:'+bg+';">'+(g||'.')+'</button></td>';});
+    cards+='<td style="font-size:11px;font-weight:700;color:#c9a84c;">'+(gross2||'--')+'</td><td style="font-size:11px;font-weight:700;color:#e8cc7a;">'+(ha2?tot2:'--')+'</td><td style="font-size:11px;font-weight:700;color:#c9a84c;">'+fmt(p2H+p2I)+'</td></tr>';
+    // P2 adj row
+    cards+='<tr style="background:rgba(232,204,122,.03);"><td class="lbl" style="font-size:9px;color:#888;padding:2px 4px 2px 8px;">Adj</td>';
+    adj2.forEach((a,h)=>{const w=hw[h];const c=w==='p2'?'#7ecf8e':w==='tie'?'#c9a84c':'#e8cc7a';cards+='<td style="font-size:10px;font-weight:700;color:'+c+';">'+(a!==null?a:'.')+'</td>';});
+    cards+='<td colspan="3"></td></tr>';
+    // Legend
+    cards+='<tr style="background:rgba(0,0,0,.15);border-top:1px solid rgba(255,255,255,.06);"><td colspan="13" style="padding:5px 8px;"><div style="display:flex;gap:10px;flex-wrap:wrap;">';
+    cards+='<div style="display:flex;align-items:center;gap:3px;"><div style="width:12px;height:12px;border-radius:3px;background:#1a4a1a;border:1px solid #2d8a3e;"></div><span style="font-size:9px;color:#888;">'+pair.p1.name.split(' ')[0]+' wins</span></div>';
+    cards+='<div style="display:flex;align-items:center;gap:3px;"><div style="width:12px;height:12px;border-radius:3px;background:#1a2a4a;border:1px solid #2563eb;"></div><span style="font-size:9px;color:#888;">'+pair.p2.name.split(' ')[0]+' wins</span></div>';
+    cards+='<div style="display:flex;align-items:center;gap:3px;"><div style="width:12px;height:12px;border-radius:3px;background:#3a3a1a;border:1px solid #c9a84c;"></div><span style="font-size:9px;color:#888;">Tie half pt</span></div>';
+    cards+='<div style="display:flex;align-items:center;gap:3px;"><div style="width:8px;height:8px;border-radius:50%;background:#c9a84c;"></div><span style="font-size:9px;color:#888;">Stroke given</span></div>';
+    cards+='</div></td></tr>';
+    cards+='</table></div></div>';
   });
+
+  const ptsHtml='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:14px;"><div style="padding:10px 14px;background:rgba(201,168,76,.08);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;">Live Points</div><div style="display:grid;grid-template-columns:1fr 1fr;"><div style="padding:14px 16px;border-right:1px solid rgba(255,255,255,.05);"><div style="font-size:10px;color:#888;margin-bottom:4px;">Team '+tA.id+'</div><div style="font-size:28px;font-weight:700;color:#c9a84c;">'+fmt(pts.aTotal)+'</div><div style="font-size:10px;color:#888;">'+fmt(pts.aH)+' hole / '+fmt(pts.aI)+' match / '+fmt(pts.aT)+' team</div></div><div style="padding:14px 16px;"><div style="font-size:10px;color:#888;margin-bottom:4px;">Team '+tB.id+'</div><div style="font-size:28px;font-weight:700;color:#c9a84c;">'+fmt(pts.bTotal)+'</div><div style="font-size:10px;color:#888;">'+fmt(pts.bH)+' hole / '+fmt(pts.bI)+' match / '+fmt(pts.bT)+' team</div></div></div></div>';
+
+  el.innerHTML='<button onclick="selWeek('+selW.id+')" style="background:none;border:none;color:#888;cursor:pointer;padding:8px 0;font-size:12px;display:block;margin-bottom:10px;">← Back</button>'
+    +'<div style="background:rgba(201,168,76,.06);border:1px solid #c9a84c44;border-radius:10px;padding:12px;margin-bottom:14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;text-align:center;"><div><div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM '+tA.id+'</div><div style="font-size:11px;">'+tA.player1_name+'</div><div style="font-size:11px;">'+tA.player2_name+'</div></div><div style="font-size:11px;font-weight:700;color:#c9a84c;">VS</div><div><div style="font-size:10px;color:#c9a84c;font-weight:700;">TEAM '+tB.id+'</div><div style="font-size:11px;">'+tB.player1_name+'</div><div style="font-size:11px;">'+tB.player2_name+'</div></div></div>'
+    +sHtml+cards+ptsHtml
+    +'<div id="sub-st"></div><button class="btn" onclick="submitCard()" id="sub-btn">Submit Scorecard</button><button class="btn2" onclick="selWeek('+selW.id+')">Cancel</button>';
 }
 
-// ── SUBMIT ────────────────────────────────────────────────────────
-async function submitCard() {
-  const missing = scores.some(pair=>pair.some(pl=>pl.some(v=>v===''||v===null)));
-  if (missing) { document.getElementById('card-status').innerHTML='<div class="status err">Please enter all 9 hole scores before submitting.</div>'; return; }
-  
-  const btn = document.getElementById('sub-btn');
-  btn.disabled=true; btn.textContent='Submitting...';
-  document.getElementById('card-status').innerHTML='<div class="status info">Saving scores...</div>';
-  
-  try {
-    let aH=0,bH=0,aI=0,bI=0,aTeam=0,bTeam=0;
-    pairs.forEach((pair,pi)=>{
-      for(let h=0;h<9;h++){const a=getAdj(pi,0,h),b=getAdj(pi,1,h);if(a===null||b===null)continue;if(a<b)aH+=1;else if(b<a)bH+=1;else{aH+=.5;bH+=.5;}}
-      const at=getAdjTotal(pi,0),bt=getAdjTotal(pi,1);
-      if(at!==null&&bt!==null){if(at<bt)aI+=1;else if(bt<at)bI+=1;else{aI+=.5;bI+=.5;}}
-    });
-    const aT0=getAdjTotal(0,0),aT1=getAdjTotal(1,0),bT0=getAdjTotal(0,1),bT1=getAdjTotal(1,1);
-    if(aT0!==null&&aT1!==null&&bT0!==null&&bT1!==null){const aC=aT0+aT1,bC=bT0+bT1;if(aC<bC)aTeam=1;else if(bC<aC)bTeam=1;else{aTeam=.5;bTeam=.5;}}
-    const aTotal=aH+aI+aTeam, bTotal=bH+bI+bTeam;
-    
-    for(let pi=0;pi<2;pi++){
-      for(let pli=0;pli<2;pli++){
-        const p=pli===0?pairs[pi].p1:pairs[pi].p2;
-        const sc=scores[pi][pli];
-        const gross=sc.reduce((s,v)=>s+(parseInt(v)||0),0);
-        const strks=pli===0?(pairs[pi].p1.hc>pairs[pi].p2.hc?calcStrokes(pairs[pi].p1.hc,pairs[pi].p2.hc):Array(9).fill(0)):(pairs[pi].p2.hc>pairs[pi].p1.hc?calcStrokes(pairs[pi].p2.hc,pairs[pi].p1.hc):Array(9).fill(0));
-        const adjTotal=sc.reduce((s,v,h)=>{const g=parseInt(v)||0;return s+(g>0?g-strks[h]:0);},0);
-        await post('scores',{matchup_id:selMatchup.id,team_id:p.teamId,player_slot:p.slot,player_name:p.name,is_sub:p.isSub,sub_id:p.subId||null,hc_used:p.hc,h1:sc[0],h2:sc[1],h3:sc[2],h4:sc[3],h5:sc[4],h6:sc[5],h7:sc[6],h8:sc[7],h9:sc[8],gross_total:gross,net_total:adjTotal});
-        if(!p.isSub){
-          const overPar=gross-PAR;
-          const prevHCs=await get(`handicaps?team_id=eq.${p.teamId}&player_slot=eq.${p.slot}&order=week_id.desc&limit=2`);
-          const prevScores=prevHCs.map(h=>h.gross_score?h.gross_score-PAR:null).filter(v=>v!==null);
-          const t=p.teamId===teamA.id?teamA:teamB;
-          const startHC=p.slot==='p1'?t.player1_hc_start:t.player2_hc_start;
-          let newHC;
-          if(prevScores.length===0)newHC=Math.round((startHC+overPar)/2);
-          else if(prevScores.length===1)newHC=Math.round((startHC+prevScores[0]+overPar)/3);
-          else newHC=Math.round((prevScores[1]+prevScores[0]+overPar)/3);
-          const prevHC=prevHCs.length>0?prevHCs[0].hc_after:startHC;
-          newHC=Math.max(0,Math.min(18,newHC));
-          if(newHC>prevHC+1)newHC=prevHC+1;
-          await post('handicaps',{team_id:p.teamId,player_slot:p.slot,week_id:selWeek.id,hc_after:newHC,gross_score:gross});
-        } else if(p.subId){
-          const sub=SUBS.find(s=>s.id===p.subId);
-          if(sub){const newHC=Math.max(0,Math.min(18,Math.round((sub.hc_start+(gross-PAR))/2)));await patch(`subs?id=eq.${p.subId}`,{hc_start:newHC});sub.hc_start=newHC;}
-        }
+function openStep(pi,pli,h){
+  stCtx={pi,pli,h};
+  const cur=parseInt(sc[pi][pli][h])||PARS[h];
+  const p=pli===0?pairs[pi].p1:pairs[pi].p2;
+  rmOv('step-ov');
+  const d=document.createElement('div');d.id='step-ov';d.className='ov';
+  d.onclick=e=>{if(e.target===d)rmOv('step-ov');};
+  d.innerHTML='<div class="box"><div style="font-size:11px;color:#888;margin-bottom:2px;">'+p.name+'</div><div style="font-size:12px;font-weight:700;color:#c9a84c;margin-bottom:14px;">Hole '+(h+1)+' - Par '+PARS[h]+' - HDCP '+HDCPS[h]+' - '+YARDS[h]+'yds</div><div style="display:flex;align-items:center;justify-content:center;gap:16px;"><button onclick="adjS(-1)" style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:22px;cursor:pointer;">-</button><div id="sv" style="font-size:38px;font-weight:700;color:#fff;min-width:50px;">'+cur+'</div><button onclick="adjS(1)" style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:22px;cursor:pointer;">+</button></div><div id="sd" style="font-size:12px;color:#888;margin-top:8px;height:18px;"></div><button onclick="confS()" style="width:100%;margin-top:14px;padding:12px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-weight:700;font-size:14px;cursor:pointer;">Done</button></div>';
+  document.body.appendChild(d);updSD(cur);
+}
+function adjS(delta){const e=document.getElementById('sv');const v=Math.max(1,parseInt(e.textContent)+delta);e.textContent=v;updSD(v);}
+function updSD(v){const h=stCtx.h;const d=v-PARS[h];const lbl={'-2':'Eagle','-1':'Birdie','0':'Par','1':'Bogey','2':'Double'}[d]||(d<-2?'Albatross':'Triple+');const c=d<0?'#7ecf8e':d===0?'#93c5fd':d===1?'#fcd34d':'#fca5a5';const e=document.getElementById('sd');if(e)e.innerHTML='<span style="color:'+c+'">'+(d===0?'E':d>0?'+'+d:d)+' - '+lbl+'</span>';}
+function confS(){const{pi,pli,h}=stCtx;sc[pi][pli][h]=parseInt(document.getElementById('sv').textContent);rmOv('step-ov');renderCard();saveProg();}
+
+function openSub(pi,pli){
+  subCtx={pi,pli};rmOv('sub-ov');
+  const d=document.createElement('div');d.id='sub-ov';d.className='ovb';
+  let html='<div class="sbox"><div style="font-size:17px;font-weight:700;color:#c9a84c;margin-bottom:14px;">Select Sub</div>';
+  if(S.length){
+    S.forEach(s=>{html+='<div class="row-item"><div><div style="font-size:13px;color:#fff;">'+s.name+'</div><div style="font-size:11px;color:#c9a84c;">Current HC: '+s.hc_start+'</div></div><button onclick="pickSub('+s.id+',\''+s.name.replace(/'/g,"\\'")+"',"+s.hc_start+')" style="padding:6px 14px;border-radius:8px;border:none;background:#c9a84c;color:#0a2e12;font-weight:700;cursor:pointer;font-size:12px;">Select</button></div>';});
+  }else{html+='<div style="color:#888;font-size:12px;padding:10px 0;">No subs on file yet</div>';}
+  html+='<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);"><div style="font-size:13px;font-weight:700;color:#c9a84c;margin-bottom:10px;">Add New Sub</div>';
+  html+='<input id="ns-n" placeholder="Full name" class="inp"><input id="ns-h" type="number" min="0" max="18" placeholder="Starting HC (leave blank if unknown)" class="inp"><button class="btn" onclick="addSub()">Add and Select This Sub</button></div>';
+  html+='<button class="btn2" style="margin-top:4px;" onclick="rmOv(\'sub-ov\')">Cancel</button></div>';
+  d.innerHTML=html;
+  document.body.appendChild(d);
+}
+function pickSub(sid,name,hc){
+  const nh=prompt(name+"'s HC is "+hc+". Enter HC for this week (or OK to use "+hc+"):",hc);
+  const fh=nh!==null?Math.min(18,Math.max(0,parseInt(nh)||hc)):hc;
+  const{pi,pli}=subCtx;
+  const p=pli===0?pairs[pi].p1:pairs[pi].p2;
+  p.name=name;p.hc=fh;p.isSub=true;p.subId=sid;
+  const allA=[pairs[0].p1,pairs[1].p1].sort((a,b)=>a.hc-b.hc);
+  const allB=[pairs[0].p2,pairs[1].p2].sort((a,b)=>a.hc-b.hc);
+  pairs[0].p1=allA[0];pairs[1].p1=allA[1];pairs[0].p2=allB[0];pairs[1].p2=allB[1];
+  sc=[[Array(9).fill(''),Array(9).fill('')],[Array(9).fill(''),Array(9).fill('')]];
+  rmOv('sub-ov');renderCard();saveProg();
+}
+async function addSub(){
+  const name=document.getElementById('ns-n').value.trim();
+  const hcv=document.getElementById('ns-h').value;
+  if(!name){alert('Please enter the sub name');return;}
+  const hc=hcv?Math.min(18,Math.max(0,parseInt(hcv))):18;
+  try{const r=await post('subs',{name,hc_start:hc});S.push(r[0]);S.sort((a,b)=>a.name.localeCompare(b.name));pickSub(r[0].id,name,hc);renderSubs();}
+  catch(e){alert('Error: '+e.message);}
+}
+
+async function submitCard(){
+  const miss=sc.some(p=>p.some(pl=>pl.some(v=>v===''||v===null)));
+  if(miss){st('sub-st','Please enter all 9 hole scores for all 4 players.','err');return;}
+  const btn=document.getElementById('sub-btn');btn.disabled=true;btn.textContent='Submitting...';
+  st('sub-st','Saving...','info');
+  try{
+    const pts=calcPts();
+    for(let pi=0;pi<2;pi++){for(let pli=0;pli<2;pli++){
+      const p=pli===0?pairs[pi].p1:pairs[pi].p2;
+      const s=sc[pi][pli];
+      const gross=s.reduce((t,v)=>t+(parseInt(v)||0),0);
+      const pst=pli===0?(pairs[pi].p1.hc>pairs[pi].p2.hc?calcSt(pairs[pi].p1.hc,pairs[pi].p2.hc):Array(9).fill(0)):(pairs[pi].p2.hc>pairs[pi].p1.hc?calcSt(pairs[pi].p2.hc,pairs[pi].p1.hc):Array(9).fill(0));
+      const adj=s.reduce((t,v,h)=>{const g=parseInt(v)||0;return t+(g>0?g-pst[h]:0);},0);
+      await post('scores',{matchup_id:selM.id,team_id:p.teamId,player_slot:p.slot,player_name:p.name,is_sub:p.isSub,sub_id:p.subId||null,hc_used:p.hc,h1:s[0],h2:s[1],h3:s[2],h4:s[3],h5:s[4],h6:s[5],h7:s[6],h8:s[7],h9:s[8],gross_total:gross,net_total:adj});
+      if(!p.isSub){
+        const op=gross-PAR;
+        const ph=await get('handicaps?team_id=eq.'+p.teamId+'&player_slot=eq.'+p.slot+'&order=week_id.desc&limit=2');
+        const ps=ph.map(h=>h.gross_score?h.gross_score-PAR:null).filter(v=>v!==null);
+        const t2=p.teamId===tA.id?tA:tB;const shc=p.slot==='p1'?t2.player1_hc_start:t2.player2_hc_start;
+        let nhc;
+        if(ps.length===0)nhc=Math.round((shc+op)/2);
+        else if(ps.length===1)nhc=Math.round((shc+ps[0]+op)/3);
+        else nhc=Math.round((ps[1]+ps[0]+op)/3);
+        const phc=ph.length>0?ph[0].hc_after:shc;
+        nhc=Math.max(0,Math.min(18,nhc));if(nhc>phc+1)nhc=phc+1;
+        await post('handicaps',{team_id:p.teamId,player_slot:p.slot,week_id:selW.id,hc_after:nhc,gross_score:gross});
+      }else if(p.subId){
+        const sub=S.find(s=>s.id===p.subId);
+        if(sub){const nhc=Math.max(0,Math.min(18,Math.round((sub.hc_start+(gross-PAR))/2)));await patch('subs?id=eq.'+p.subId,{hc_start:nhc});sub.hc_start=nhc;}
       }
-    }
-    
-    await post('points',{matchup_id:selMatchup.id,week_id:selWeek.id,team_id:teamA.id,hole_points:aH,individual_points:aI,team_point:aTeam,week_total:aTotal});
-    await post('points',{matchup_id:selMatchup.id,week_id:selWeek.id,team_id:teamB.id,hole_points:bH,individual_points:bI,team_point:bTeam,week_total:bTotal});
-    await patch(`matchups?id=eq.${selMatchup.id}`,{status:'submitted',submitted_at:new Date().toISOString()});
-    
-    localStorage.removeItem('golf_progress');
-    const fmt=v=>v%1===0?String(v):v.toFixed(1);
-    document.getElementById('week-list').innerHTML=`<div style="text-align:center;padding:30px 0;">
-      <div style="font-size:52px;margin-bottom:14px;">🏆</div>
-      <div style="font-size:20px;font-weight:700;color:#c9a84c;margin-bottom:6px;">Scorecard Submitted!</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0;">
-        <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:16px;text-align:center;">
-          <div style="font-size:10px;color:#888;">Team ${teamA.id}</div>
-          <div style="font-size:28px;font-weight:700;color:#c9a84c;">${fmt(aTotal)}</div>
-        </div>
-        <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:16px;text-align:center;">
-          <div style="font-size:10px;color:#888;">Team ${teamB.id}</div>
-          <div style="font-size:28px;font-weight:700;color:#c9a84c;">${fmt(bTotal)}</div>
-        </div>
-      </div>
-      <button onclick="renderWeeks()" style="width:100%;padding:14px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:15px;font-weight:700;cursor:pointer;">Enter Another Scorecard</button>
-    </div>`;
-    renderStandings();
-    renderSubsTab();
-  } catch(e) {
-    btn.disabled=false; btn.textContent='Submit Scorecard ✓';
-    document.getElementById('card-status').innerHTML=`<div class="status err">Error: ${e.message}</div>`;
-  }
+    }}
+    await post('points',{matchup_id:selM.id,week_id:selW.id,team_id:tA.id,hole_points:pts.aH,individual_points:pts.aI,team_point:pts.aT,week_total:pts.aTotal});
+    await post('points',{matchup_id:selM.id,week_id:selW.id,team_id:tB.id,hole_points:pts.bH,individual_points:pts.bI,team_point:pts.bT,week_total:pts.bTotal});
+    await patch('matchups?id=eq.'+selM.id,{status:'submitted',submitted_at:new Date().toISOString()});
+    localStorage.removeItem('gp');
+    document.getElementById('sc-body').innerHTML='<div style="text-align:center;padding:40px 20px;"><div style="font-size:52px;margin-bottom:14px;">🏆</div><div style="font-size:20px;font-weight:700;color:#c9a84c;margin-bottom:6px;">Submitted!</div><div style="font-size:13px;color:#888;margin-bottom:20px;">Points and handicaps updated.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;"><div style="background:rgba(201,168,76,.08);border:1px solid #c9a84c44;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:10px;color:#888;">Team '+tA.id+'</div><div style="font-size:28px;font-weight:700;color:#c9a84c;">'+fmt(pts.aTotal)+'</div></div><div style="background:rgba(201,168,76,.08);border:1px solid #c9a84c44;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:10px;color:#888;">Team '+tB.id+'</div><div style="font-size:28px;font-weight:700;color:#c9a84c;">'+fmt(pts.bTotal)+'</div></div></div><button class="btn" onclick="renderWeeks()">Enter Another Scorecard</button></div>';
+    renderLb();renderSubs();
+  }catch(e){btn.disabled=false;btn.textContent='Submit Scorecard';st('sub-st','Error: '+e.message,'err');}
 }
 
-// ── SAVE/RESTORE ──────────────────────────────────────────────────
-function saveProgress() {
-  if (!selMatchup) return;
-  try {
-    localStorage.setItem('golf_progress', JSON.stringify({
-      matchupId:selMatchup.id, teamAId:teamA.id, teamBId:teamB.id,
-      weekNum:selWeek.week_number, weekId:selWeek.id,
-      pairs, scores, ts:Date.now()
-    }));
-  } catch(e) {}
+function saveProg(){
+  if(!selM)return;
+  try{localStorage.setItem('gp',JSON.stringify({mid:selM.id,tAid:tA.id,tBid:tB.id,wid:selW.id,wn:selW.week_number,pairs,sc,ts:Date.now()}));}catch(e){}
 }
 
-async function restoreCard(saved) {
-  selMatchup = {id:saved.matchupId};
-  selWeek = WEEKS.find(w=>w.id===saved.weekId)||{id:saved.weekId,week_number:saved.weekNum};
-  teamA = TEAMS[saved.teamAId]; teamB = TEAMS[saved.teamBId];
-  pairs = saved.pairs; scores = saved.scores;
-  renderScorecard();
-  show('scorecard', document.querySelector('.tab'));
-}
-
-// ── STANDINGS ─────────────────────────────────────────────────────
-async function renderStandings() {
-  const el = document.getElementById('standings-body');
-  try {
-    const pts = await get('points?select=team_id,week_total,week_id&order=week_id');
-    const totals={}, latest={};
-    pts.forEach(p=>{
-      if(!totals[p.team_id]){totals[p.team_id]=0;latest[p.team_id]=0;}
-      totals[p.team_id]+=parseFloat(p.week_total)||0;
-      latest[p.team_id]=parseFloat(p.week_total)||0;
+async function renderLb(){
+  const el=document.getElementById('lb-body');
+  try{
+    const pts=await get('points?select=team_id,week_total,week_id&order=week_id');
+    const tot={},lat={};
+    pts.forEach(p=>{if(!tot[p.team_id]){tot[p.team_id]=0;lat[p.team_id]=0;}tot[p.team_id]+=parseFloat(p.week_total)||0;lat[p.team_id]=parseFloat(p.week_total)||0;});
+    const sorted=Object.entries(tot).map(([id,t])=>({id:parseInt(id),t,w:lat[id]})).sort((a,b)=>b.t-a.t);
+    if(!sorted.length){el.innerHTML='<div class="info" style="margin-top:8px;">No scores yet</div>';return;}
+    let html='<div class="lb-hdr"><div style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#c9a84c;">Pony Hills Country Club</div><div style="font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f8f4e8;font-family:Georgia,serif;margin-top:4px;">Season Standings</div><div style="font-size:10px;color:#c9a84c;margin-top:3px;">2026 Season</div></div>';
+    html+='<div class="lb-cols"><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;">POS</div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;">TEAM</div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;text-align:center;">WK</div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;text-align:center;">TOTAL</div></div>';
+    html+='<div class="lb-body">';
+    sorted.forEach((r,i)=>{
+      const t=T[r.id];if(!t)return;
+      const pc=i===0?'#c9a84c':i===1?'#b8b8b8':i===2?'#c87941':'rgba(255,255,255,.3)';
+      const bg=i<3?'rgba(201,168,76,.06)':i%2===0?'rgba(255,255,255,.02)':'transparent';
+      html+='<div class="lb-row" style="background:'+bg+';"><div style="font-size:'+(i<3?'20':'13')+'px;font-weight:700;color:'+pc+';text-align:center;font-family:Georgia,serif;">'+(i+1)+'</div><div style="padding-left:6px;"><div style="font-size:13px;font-weight:600;color:#fff;">Team '+t.id+'</div><div style="font-size:10px;color:#888;">'+t.player1_name+' & '+t.player2_name+'</div></div><div style="text-align:center;font-size:12px;font-weight:600;color:#f8f4e8;">'+fmt(r.w)+'</div><div style="text-align:center;font-size:'+(i<3?'18':'14')+'px;font-weight:700;color:#c9a84c;">'+fmt(r.t)+'</div></div>';
     });
-    const sorted=Object.entries(totals).map(([id,tot])=>({id:parseInt(id),tot,wk:latest[id]})).sort((a,b)=>b.tot-a.tot);
-    if(!sorted.length){el.innerHTML='<div class="status info">No scores yet</div>';return;}
-    const fmt=v=>v%1===0?String(v):v.toFixed(1);
-    el.innerHTML=`<div style="background:#1a3a1a;border:1px solid rgba(201,168,76,.4);border-radius:14px 14px 0 0;padding:16px;text-align:center;"><div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#c9a84c;">Pony Hills CC</div><div style="font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f8f4e8;font-family:Georgia,serif;">Season Standings</div><div style="font-size:10px;color:#c9a84c;margin-top:3px;">✦ 2026 Season ✦</div></div>
-    <div style="background:#1a3a1a;display:grid;grid-template-columns:44px 1fr 60px 70px;padding:8px 14px;border-left:1px solid rgba(201,168,76,.3);border-right:1px solid rgba(201,168,76,.3);">
-      ${['POS','TEAM','WK PTS','TOTAL'].map(h=>`<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;${h==='TEAM'?'':'text-align:center;'}">${h}</div>`).join('')}
-    </div>
-    <div style="border:1px solid rgba(201,168,76,.3);border-top:none;border-radius:0 0 14px 14px;overflow:hidden;">
-      ${sorted.map((row,i)=>{
-        const t=TEAMS[row.id];if(!t)return '';
-        const posColor=i===0?'#c9a84c':i===1?'#b8b8b8':i===2?'#c87941':'rgba(255,255,255,.3)';
-        const rowBg=i<3?'rgba(201,168,76,.06)':i%2===0?'rgba(255,255,255,.02)':'transparent';
-        return `<div style="display:grid;grid-template-columns:44px 1fr 60px 70px;padding:12px 14px;background:${rowBg};border-bottom:1px solid rgba(255,255,255,.05);align-items:center;">
-          <div style="font-size:${i<3?'20':'14'}px;font-weight:700;color:${posColor};text-align:center;font-family:Georgia,serif;">${i+1}</div>
-          <div style="padding-left:8px;"><div style="font-size:13px;font-weight:600;color:#fff;">Team ${t.id}</div><div style="font-size:10px;color:#888;">${t.player1_name} & ${t.player2_name}</div></div>
-          <div style="text-align:center;font-size:13px;font-weight:600;color:#f8f4e8;">${fmt(row.wk)}</div>
-          <div style="text-align:center;font-size:${i<3?'18':'15'}px;font-weight:700;color:#c9a84c;">${fmt(row.tot)}</div>
-        </div>`;
-      }).join('')}
-    </div>`;
-  } catch(e) { el.innerHTML=`<div class="status err">Error: ${e.message}</div>`; }
+    html+='</div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div class="err">Error: '+e.message+'</div>';}
 }
 
-// ── SCHEDULE TAB ──────────────────────────────────────────────────
-function renderScheduleTab() {
-  const el = document.getElementById('schedule-body');
-  el.innerHTML = WEEKS.map(w => {
-    const s = getStatus(w.date);
-    if (s==='upcoming' && !SCHEDULE[w.week_number]) return '';
-    const d = new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    const badge = s==='active'?`<span style="background:#c9a84c;color:#0a2e12;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;">This Week</span>`:'';
-    const matches = SCHEDULE[w.week_number]||[];
-    const isSpecial = w.week_number >= 14;
-    
-    if (isSpecial) {
-      return `<div style="background:rgba(${w.week_number===16?'139,26,26':'90,56,0'},.2);border:1px solid rgba(${w.week_number===16?'192,57,43':'201,168,76'},.3);border-radius:12px;padding:14px;margin-bottom:10px;">
-        <div style="font-weight:700;color:${w.week_number===16?'#e74c3c':'#c9a84c'};">${w.week_number===16?'⭐ Position Night':'Week '+w.week_number+' — TBD by Standings'}</div>
-        <div style="font-size:12px;color:#888;margin-top:3px;">${d}</div>
-      </div>`;
+function renderSch(){
+  const el=document.getElementById('sch-body');
+  let html='<div style="padding-top:8px;">';
+  W.forEach(w=>{
+    const s=wkSt(w.date);
+    const d=new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    const badge=s==='now'?'<span style="background:#c9a84c;color:#0a2e12;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;">This Week</span>':'';
+    const matches=SCH[w.week_number]||[];
+    if(w.week_number>=14){
+      html+='<div style="background:rgba('+(w.week_number===16?'139,26,26':'90,56,0')+',.2);border:1px solid rgba('+(w.week_number===16?'192,57,43':'201,168,76')+',.3);border-radius:12px;padding:12px;margin-bottom:8px;"><div style="font-weight:700;color:'+(w.week_number===16?'#e74c3c':'#c9a84c')+'">'+(w.week_number===16?'Position Night':'Week '+w.week_number+' - TBD by Standings')+'</div><div style="font-size:11px;color:#888;margin-top:2px;">'+d+'</div></div>';
+      return;
     }
-    
-    return `<details style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;margin-bottom:10px;overflow:hidden;" ${s==='active'?'open':''}>
-      <summary style="padding:13px 16px;cursor:pointer;font-weight:600;color:#f8f4e8;display:flex;align-items:center;justify-content:space-between;list-style:none;">
-        <span>Week ${w.week_number}${badge}</span>
-        <span style="font-size:11px;color:#888;">${d}</span>
-      </summary>
-      <div style="padding:10px 12px;border-top:1px solid rgba(255,255,255,.06);">
-        ${matches.map(([a,b])=>{
-          const ta=TEAMS[a],tb=TEAMS[b];if(!ta||!tb)return '';
-          const aP=[{name:ta.player1_name,hc:ta.player1_hc_start},{name:ta.player2_name,hc:ta.player2_hc_start}].sort((x,y)=>x.hc-y.hc);
-          const bP=[{name:tb.player1_name,hc:tb.player1_hc_start},{name:tb.player2_name,hc:tb.player2_hc_start}].sort((x,y)=>x.hc-y.hc);
-          return `<div style="background:rgba(255,255,255,.03);border-radius:8px;padding:10px;margin-bottom:6px;">
-            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:8px;">
-              <div><div style="font-size:10px;color:#c9a84c;font-weight:700;">Team ${a}</div></div>
-              <div style="font-size:10px;font-weight:700;color:#c9a84c;text-align:center;">VS</div>
-              <div style="text-align:right;"><div style="font-size:10px;color:#c9a84c;font-weight:700;">Team ${b}</div></div>
-            </div>
-            ${[0,1].map(i=>`<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;margin-bottom:${i===0?'4px':'0'};">
-              <span style="font-size:11px;">${aP[i].name} <span style="color:#c9a84c;">(${aP[i].hc})</span></span>
-              <span style="font-size:10px;color:${i===0?'#93c5fd':'#fca5a5'};text-align:center;">${i===0?'🔵':'🔴'}</span>
-              <span style="font-size:11px;text-align:right;">${bP[i].name} <span style="color:#c9a84c;">(${bP[i].hc})</span></span>
-            </div>`).join('')}
-          </div>`;
-        }).join('')}
-      </div>
-    </details>`;
-  }).join('');
+    html+='<details style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;margin-bottom:8px;overflow:hidden;"'+(s==='now'?' open':'')+'><summary style="padding:12px 14px;cursor:pointer;font-weight:600;color:#f8f4e8;display:flex;justify-content:space-between;list-style:none;"><span>Week '+w.week_number+badge+'</span><span style="font-size:11px;color:#888;">'+d+'</span></summary><div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.06);">';
+    matches.forEach(([a,b])=>{
+      const ta=T[a],tb=T[b];if(!ta||!tb)return;
+      const ap=[{n:ta.player1_name,h:ta.player1_hc_start},{n:ta.player2_name,h:ta.player2_hc_start}].sort((x,y)=>x.h-y.h);
+      const bp=[{n:tb.player1_name,h:tb.player1_hc_start},{n:tb.player2_name,h:tb.player2_hc_start}].sort((x,y)=>x.h-y.h);
+      html+='<div style="background:rgba(255,255,255,.03);border-radius:8px;padding:8px 10px;margin-bottom:5px;"><div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:6px;"><div style="font-size:10px;color:#c9a84c;font-weight:700;">Team '+a+'</div><div style="font-size:9px;font-weight:700;color:#c9a84c;text-align:center;">VS</div><div style="font-size:10px;color:#c9a84c;font-weight:700;text-align:right;">Team '+b+'</div></div>';
+      [0,1].forEach(i=>{html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;margin-bottom:'+(i===0?'3px':'0')+';"><span style="font-size:10px;">'+ap[i].n+' <span style="color:#c9a84c;">('+ap[i].h+')</span></span><span style="font-size:9px;color:'+(i===0?'#93c5fd':'#fca5a5')+';text-align:center;">'+(i===0?'Low':'High')+'</span><span style="font-size:10px;text-align:right;">'+bp[i].n+' <span style="color:#c9a84c;">('+bp[i].h+')</span></span></div>';});
+      html+='</div>';
+    });
+    html+='</div></details>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
 }
 
-// ── SUBS TAB ──────────────────────────────────────────────────────
-function renderSubsTab() {
-  const el = document.getElementById('subs-body');
-  if (!SUBS.length) { el.innerHTML='<div class="status info">No subs on file yet</div>'; return; }
-  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 60px 80px;padding:6px 0;border-bottom:1px solid rgba(201,168,76,.15);margin-bottom:4px;">
-    ${['Name','HC','Status'].map(h=>`<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;${h!=='Name'?'text-align:center;':''}">${h}</div>`).join('')}
-  </div>
-  ${SUBS.map((s,i)=>`<div style="display:grid;grid-template-columns:1fr 60px 80px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05);align-items:center;background:${i%2===0?'rgba(255,255,255,.02)':'transparent'};">
-    <div style="font-size:13px;font-weight:500;color:#fff;">${s.name}</div>
-    <div style="font-size:15px;font-weight:700;color:#c9a84c;text-align:center;">${s.hc_start}</div>
-    <div style="font-size:10px;color:#888;text-align:center;">Available</div>
-  </div>`).join('')}`;
+function renderSubs(){
+  const el=document.getElementById('sb-body');
+  let html='<div style="padding:14px;"><div style="font-size:16px;font-weight:700;color:#c9a84c;margin-bottom:12px;">Active Subs</div>';
+  if(S.length){
+    html+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">';
+    html+='<div style="display:grid;grid-template-columns:1fr 60px 80px;padding:8px 14px;background:rgba(201,168,76,.08);border-bottom:1px solid #c9a84c22;"><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;">Name</div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;text-align:center;">HC</div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;text-align:center;">Status</div></div>';
+    S.forEach((s,i)=>{html+='<div style="display:grid;grid-template-columns:1fr 60px 80px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.05);align-items:center;background:'+(i%2===0?'rgba(255,255,255,.02)':'transparent')+';"><div style="font-size:13px;font-weight:500;color:#fff;">'+s.name+'</div><div style="font-size:15px;font-weight:700;color:#c9a84c;text-align:center;">'+s.hc_start+'</div><div style="font-size:10px;color:#888;text-align:center;">Available</div></div>';});
+    html+='</div>';
+  }else{html+='<div class="info">No subs on file yet</div>';}
+  html+='<div style="margin-top:10px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.07);font-size:11px;color:#888;font-style:italic;line-height:1.6;">Need a sub? Contact your team captain. Check the 2025 reference list at the clubhouse for returning subs.</div></div>';
+  el.innerHTML=html;
 }
 
-// ── ADMIN ─────────────────────────────────────────────────────────
-const ADMIN_PW = 'PonyHills2026';
-
-function checkPW() {
-  const pw = document.getElementById('admin-pw').value;
-  if (pw === ADMIN_PW) {
-    document.getElementById('admin-lock').style.display = 'none';
-    document.getElementById('admin-panel').style.display = 'block';
-    document.getElementById('admin-pw').value = '';
-    loadAdminWeeks();
-    loadAdminStats();
-  } else {
-    document.getElementById('pw-err').style.display = 'block';
-    document.getElementById('admin-pw').value = '';
-    setTimeout(() => document.getElementById('pw-err').style.display='none', 2000);
-  }
+// ADMIN
+function chkPW(){
+  const p=document.getElementById('adm-pw').value;
+  if(p===APW){document.getElementById('adm-lock').style.display='none';document.getElementById('adm-panel').style.display='block';document.getElementById('adm-pw').value='';loadAdmWks();loadAdmStats();}
+  else{document.getElementById('pw-err').style.display='block';document.getElementById('adm-pw').value='';setTimeout(()=>document.getElementById('pw-err').style.display='none',2000);}
 }
-
-function lockAdmin() {
-  document.getElementById('admin-lock').style.display = 'block';
-  document.getElementById('admin-panel').style.display = 'none';
-}
-
-function loadAdminWeeks() {
-  const sel = document.getElementById('admin-wk');
-  sel.innerHTML = '<option value="">Select week...</option>';
-  WEEKS.filter(w => getStatus(w.date) !== 'upcoming').forEach(w => {
-    const opt = document.createElement('option');
-    opt.value = w.id;
-    opt.textContent = `Week ${w.week_number} — ${new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
-    sel.appendChild(opt);
+function lockAdm(){document.getElementById('adm-lock').style.display='block';document.getElementById('adm-panel').style.display='none';}
+function loadAdmWks(){
+  ['adm-wk','adm-wk2'].forEach(id=>{
+    const s=document.getElementById(id);
+    s.innerHTML='<option value="">Select week...</option>';
+    W.filter(w=>wkSt(w.date)!=='up').forEach(w=>{const o=document.createElement('option');o.value=w.id;o.textContent='Week '+w.week_number+' - '+new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});s.appendChild(o);});
   });
 }
-
-async function loadAdminMatchups() {
-  const weekId = document.getElementById('admin-wk').value;
-  if (!weekId) return;
-  const el = document.getElementById('admin-matchups');
-  el.innerHTML = '<div class="status info">Loading...</div>';
-  try {
-    const [matchups, pts] = await Promise.all([
-      get(`matchups?week_id=eq.${weekId}&order=id`),
-      get(`points?week_id=eq.${weekId}`)
-    ]);
-    const fmt = v => v !== undefined && v !== null ? (parseFloat(v)%1===0?parseFloat(v):parseFloat(v).toFixed(1)) : '—';
-    el.innerHTML = matchups.map(m => {
-      const ta=TEAMS[m.team_a_id], tb=TEAMS[m.team_b_id];
-      const pA=pts.find(p=>p.team_id===m.team_a_id&&p.matchup_id===m.id);
-      const pB=pts.find(p=>p.team_id===m.team_b_id&&p.matchup_id===m.id);
-      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-size:12px;font-weight:600;color:#fff;">Team ${m.team_a_id} vs Team ${m.team_b_id}</div>
-          <span style="font-size:10px;color:${m.status==='submitted'?'#2ecc71':'#c9a84c'};">${m.status==='submitted'?'✓ Submitted':'Pending'}</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-          <div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;">
-            <div style="font-size:10px;color:#888;">Team ${m.team_a_id}</div>
-            <div style="font-size:18px;font-weight:700;color:#c9a84c;">${fmt(pA?.week_total)}</div>
-          </div>
-          <div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;">
-            <div style="font-size:10px;color:#888;">Team ${m.team_b_id}</div>
-            <div style="font-size:18px;font-weight:700;color:#c9a84c;">${fmt(pB?.week_total)}</div>
-          </div>
-        </div>
-        <button onclick="editPts(${m.id},${m.team_a_id},${m.team_b_id},'${pA?.id||''}','${pB?.id||''}',${pA?.week_total||0},${pB?.week_total||0})" 
-          style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:13px;cursor:pointer;">✏️ Edit Points</button>
-      </div>`;
-    }).join('') || '<div style="color:#888;font-size:13px;">No matchups found</div>';
-  } catch(e) {
-    el.innerHTML = `<div class="status err">Error: ${e.message}</div>`;
-  }
-}
-
-function editPts(matchupId, taId, tbId, pAId, pBId, pAVal, pBVal) {
-  const existing = document.getElementById('edit-overlay');
-  if (existing) existing.remove();
-  const div = document.createElement('div');
-  div.id = 'edit-overlay';
-  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;';
-  div.innerHTML = `<div style="background:#0f3d1a;border:1px solid rgba(201,168,76,.4);border-radius:16px;padding:22px;width:100%;max-width:400px;">
-    <div style="font-size:16px;font-weight:700;color:#c9a84c;margin-bottom:14px;">✏️ Edit Points — Team ${taId} vs Team ${tbId}</div>
-    <div style="font-size:11px;color:#888;margin-bottom:14px;">Total must equal 21 pts</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-      <div>
-        <div style="font-size:10px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">Team ${taId} Pts</div>
-        <input id="edit-a" type="number" min="0" max="21" step="0.5" value="${pAVal}" style="width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px;text-align:center;">
-      </div>
-      <div>
-        <div style="font-size:10px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">Team ${tbId} Pts</div>
-        <input id="edit-b" type="number" min="0" max="21" step="0.5" value="${pBVal}" style="width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px;text-align:center;">
-      </div>
-    </div>
-    <div id="edit-status" style="margin-bottom:10px;"></div>
-    <button onclick="saveEditPts(${matchupId},${taId},${tbId},'${pAId}','${pBId}')" style="width:100%;padding:13px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">Save Changes</button>
-    <button onclick="document.getElementById('edit-overlay').remove()" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:14px;cursor:pointer;">Cancel</button>
-  </div>`;
-  document.body.appendChild(div);
-}
-
-async function saveEditPts(matchupId, taId, tbId, pAId, pBId) {
-  const pA = parseFloat(document.getElementById('edit-a').value);
-  const pB = parseFloat(document.getElementById('edit-b').value);
-  if (isNaN(pA)||isNaN(pB)) { alert('Enter valid points'); return; }
-  if (Math.abs(pA+pB-21)>0.01) { if (!confirm(`Points total ${pA+pB} not 21. Save anyway?`)) return; }
-  const weekId = document.getElementById('admin-wk').value;
-  try {
-    if (pAId) { await patch(`points?id=eq.${pAId}`, {week_total:pA}); }
-    else { await post('points', {matchup_id:matchupId,week_id:parseInt(weekId),team_id:taId,week_total:pA,hole_points:0,individual_points:0,team_point:0}); }
-    if (pBId) { await patch(`points?id=eq.${pBId}`, {week_total:pB}); }
-    else { await post('points', {matchup_id:matchupId,week_id:parseInt(weekId),team_id:tbId,week_total:pB,hole_points:0,individual_points:0,team_point:0}); }
-    document.getElementById('edit-overlay').remove();
-    loadAdminMatchups();
-    renderStandings();
-  } catch(e) { document.getElementById('edit-status').innerHTML=`<div class="status err">Error: ${e.message}</div>`; }
-}
-
-async function loadAdminStats() {
-  const el = document.getElementById('admin-stats');
-  try {
-    const [scores, pts, hcs, subs2] = await Promise.all([
-      get('scores?select=id'), get('points?select=id,week_total'),
-      get('handicaps?select=id'), get('subs?select=id')
-    ]);
-    const total = pts.reduce((s,p)=>s+(parseFloat(p.week_total)||0),0);
-    el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      ${[['Score Entries',scores.length],['Scorecards',Math.floor(pts.length/2)],['HC Updates',hcs.length],['Subs',subs2.length]].map(([label,val])=>
-        `<div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:12px;">
-          <div style="font-size:22px;font-weight:700;color:#c9a84c;">${val}</div>
-          <div style="font-size:10px;color:#888;">${label}</div>
-        </div>`).join('')}
-    </div>`;
-  } catch(e) { el.innerHTML=`<div class="status err">Error: ${e.message}</div>`; }
-}
-
-async function exportData() {
-  const btn = document.getElementById('export-btn');
-  const status = document.getElementById('export-status');
-  btn.disabled=true; btn.textContent='Preparing...';
-  try {
-    const [weeks2,matchups,scores,pts,hcs,subs2] = await Promise.all([
-      get('weeks?order=week_number'), get('matchups?order=id'),
-      get('scores?order=id'), get('points?order=id'),
-      get('handicaps?order=id'), get('subs?order=name')
-    ]);
-    let csv = 'SEASON STANDINGS
-Team,Player 1,Player 2,Season Total
-';
-    const totals={};
-    pts.forEach(p=>{if(!totals[p.team_id])totals[p.team_id]=0;totals[p.team_id]+=parseFloat(p.week_total)||0;});
-    Object.entries(totals).sort((a,b)=>b[1]-a[1]).forEach(([id,tot])=>{
-      const t=TEAMS[id];if(t)csv+=`Team ${id},"${t.player1_name}","${t.player2_name}",${tot}
-`;
+async function loadAdmMatchups(type){
+  const wid=document.getElementById(type==='pts'?'adm-wk':'adm-wk2').value;
+  if(!wid)return;
+  const listEl=document.getElementById(type==='pts'?'adm-pts-list':'adm-sc-list');
+  listEl.innerHTML='<div class="info">Loading...</div>';
+  try{
+    const[m,pts]=await Promise.all([get('matchups?week_id=eq.'+wid+'&order=id'),get('points?week_id=eq.'+wid)]);
+    let html='';
+    m.forEach(mx=>{
+      const pA=pts.find(p=>p.team_id===mx.team_a_id&&p.matchup_id===mx.id);
+      const pB=pts.find(p=>p.team_id===mx.team_b_id&&p.matchup_id===mx.id);
+      html+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-bottom:8px;">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-size:12px;font-weight:600;color:#fff;">Team '+mx.team_a_id+' vs Team '+mx.team_b_id+'</div><span style="font-size:10px;color:'+(mx.status==='submitted'?'#2ecc71':'#c9a84c')+'">'+(mx.status==='submitted'?'Submitted':'Pending')+'</span></div>';
+      if(type==='pts'){
+        html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">';
+        html+='<div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;"><div style="font-size:10px;color:#888;">Team '+mx.team_a_id+'</div><div style="font-size:18px;font-weight:700;color:#c9a84c;">'+fmt(pA&&pA.week_total)+'</div></div>';
+        html+='<div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;"><div style="font-size:10px;color:#888;">Team '+mx.team_b_id+'</div><div style="font-size:18px;font-weight:700;color:#c9a84c;">'+fmt(pB&&pB.week_total)+'</div></div></div>';
+        html+='<button onclick="editPts('+mx.id+','+mx.team_a_id+','+mx.team_b_id+',\''+(pA&&pA.id||'')+'\',\''+(pB&&pB.id||'')+'\','+(pA&&pA.week_total||0)+','+(pB&&pB.week_total||0)+')" class="btn2" style="margin:0;">Edit Points</button>';
+      }else{
+        html+='<button onclick="editScorecard('+mx.id+','+mx.team_a_id+','+mx.team_b_id+')" class="btn2" style="margin:0;">Edit Scores</button>';
+      }
+      html+='</div>';
     });
-    csv+='
-WEEKLY POINTS
-Week,Date,Team,Points
-';
-    pts.forEach(p=>{const m=matchups.find(m=>m.id===p.matchup_id);const w=m?weeks2.find(w=>w.id===m.week_id):null;csv+=`${w?.week_number||''},${w?.date||''},Team ${p.team_id},${p.week_total}
-`;});
-    csv+='
-SCORES
-Week,Team,Player,HC,H1,H2,H3,H4,H5,H6,H7,H8,H9,Gross,Adj
-';
-    scores.forEach(s=>{const m=matchups.find(m=>m.id===s.matchup_id);const w=m?weeks2.find(w=>w.id===m.week_id):null;csv+=`${w?.week_number||''},Team ${s.team_id},"${s.player_name}",${s.hc_used},${s.h1||''},${s.h2||''},${s.h3||''},${s.h4||''},${s.h5||''},${s.h6||''},${s.h7||''},${s.h8||''},${s.h9||''},${s.gross_total||''},${s.net_total||''}
-`;});
-    csv+='
-HANDICAPS
-Week,Team,Slot,HC After,Gross
-';
-    hcs.forEach(h=>{const w=weeks2.find(w=>w.id===h.week_id);csv+=`${w?.week_number||''},Team ${h.team_id},${h.player_slot},${h.hc_after},${h.gross_score||''}
-`;});
-    csv+='
-SUBS
-Name,Current HC
-';
-    subs2.forEach(s=>csv+=`"${s.name}",${s.hc_start}
-`);
-    const blob=new Blob([csv],{type:'text/csv'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=`PonyHills_2026_Backup_${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-    btn.disabled=false;btn.textContent='Download Season Backup';
-    status.innerHTML='<div class="status ok">✓ Downloaded!</div>';
-    setTimeout(()=>status.innerHTML='',3000);
-  } catch(e) {
-    btn.disabled=false;btn.textContent='Download Season Backup';
-    status.innerHTML=`<div class="status err">Error: ${e.message}</div>`;
-  }
+    listEl.innerHTML=html||'<div style="color:#888;font-size:13px;">No matchups found</div>';
+  }catch(e){listEl.innerHTML='<div class="err">'+e.message+'</div>';}
 }
 
-// ── START ─────────────────────────────────────────────────────────
-window.addEventListener('load', init);
+function editPts(mid,taId,tbId,pAId,pBId,pAVal,pBVal){
+  rmOv('edit-ov');
+  const d=document.createElement('div');d.id='edit-ov';d.className='ov';
+  d.innerHTML='<div style="background:#0f3d1a;border:1px solid #c9a84c66;border-radius:16px;padding:22px;width:100%;max-width:400px;"><div style="font-size:16px;font-weight:700;color:#c9a84c;margin-bottom:6px;">Edit Points</div><div style="font-size:11px;color:#888;margin-bottom:14px;">Team '+taId+' vs Team '+tbId+' - Total should equal 21</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;"><div><div style="font-size:10px;color:#888;margin-bottom:5px;">Team '+taId+' Pts</div><input id="ea" type="number" min="0" max="21" step="0.5" value="'+pAVal+'" class="inp" style="text-align:center;font-size:18px;margin:0;"></div><div><div style="font-size:10px;color:#888;margin-bottom:5px;">Team '+tbId+' Pts</div><input id="eb" type="number" min="0" max="21" step="0.5" value="'+pBVal+'" class="inp" style="text-align:center;font-size:18px;margin:0;"></div></div><div id="est" style="margin-bottom:10px;"></div><button class="btn" onclick="savePts('+mid+','+taId+','+tbId+',\''+pAId+'\',\''+pBId+'\')">Save Changes</button><button class="btn2" style="margin:0;" onclick="rmOv(\'edit-ov\')">Cancel</button></div>';
+  document.body.appendChild(d);
+}
+async function savePts(mid,taId,tbId,pAId,pBId){
+  const pA=parseFloat(document.getElementById('ea').value);
+  const pB=parseFloat(document.getElementById('eb').value);
+  if(isNaN(pA)||isNaN(pB)){alert('Enter valid points');return;}
+  if(Math.abs(pA+pB-21)>0.01&&!confirm('Total is '+(pA+pB)+' not 21. Save anyway?'))return;
+  const wid=document.getElementById('adm-wk').value;
+  try{
+    if(pAId)await patch('points?id=eq.'+pAId,{week_total:pA});else await post('points',{matchup_id:mid,week_id:parseInt(wid),team_id:taId,week_total:pA,hole_points:0,individual_points:0,team_point:0});
+    if(pBId)await patch('points?id=eq.'+pBId,{week_total:pB});else await post('points',{matchup_id:mid,week_id:parseInt(wid),team_id:tbId,week_total:pB,hole_points:0,individual_points:0,team_point:0});
+    rmOv('edit-ov');loadAdmMatchups('pts');renderLb();
+  }catch(e){document.getElementById('est').innerHTML='<div class="err">'+e.message+'</div>';}
+}
+
+async function editScorecard(mid,taId,tbId){
+  rmOv('edit-sc-ov');
+  const d=document.createElement('div');d.id='edit-sc-ov';d.className='ov';d.style.alignItems='flex-start';d.style.paddingTop='20px';d.style.overflowY='auto';
+  d.innerHTML='<div style="background:#0f3d1a;border:1px solid #c9a84c66;border-radius:16px;padding:20px;width:100%;max-width:640px;"><div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:4px;">Edit Scores</div><div style="font-size:11px;color:#888;margin-bottom:14px;">Team '+taId+' vs Team '+tbId+' - points will recalculate automatically</div><div id="esc-body"><div class="info">Loading...</div></div><div id="esc-st" style="margin-top:10px;"></div><button class="btn2" style="margin-top:8px;" onclick="rmOv(\'edit-sc-ov\')">Close</button></div>';
+  document.body.appendChild(d);
+  try{
+    const scores=await get('scores?matchup_id=eq.'+mid+'&order=id');
+    if(!scores.length){document.getElementById('esc-body').innerHTML='<div class="info">No scores found for this matchup</div>';return;}
+    let html='';
+    scores.forEach(s=>{
+      const holes=[s.h1,s.h2,s.h3,s.h4,s.h5,s.h6,s.h7,s.h8,s.h9];
+      html+='<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08);">';
+      html+='<div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:8px;">'+s.player_name+' <span style="color:#c9a84c;font-size:10px;">HC '+s.hc_used+' - Team '+s.team_id+'</span></div>';
+      html+='<div style="display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-bottom:6px;">';
+      holes.forEach((h,i)=>{html+='<div style="text-align:center;"><div style="font-size:8px;color:#555;margin-bottom:2px;">H'+(i+1)+'<br>P'+PARS[i]+'</div><input type="number" min="1" max="15" value="'+(h||'')+'" id="esc-'+s.id+'-'+i+'" style="width:100%;padding:5px 2px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-size:12px;text-align:center;outline:none;"></div>';});
+      html+='</div></div>';
+    });
+    html+='<button class="btn" onclick="saveEditedScores('+mid+',\''+scores.map(s=>s.id).join(',')+'\','+taId+','+tbId+')">Save and Recalculate Points</button>';
+    document.getElementById('esc-body').innerHTML=html;
+  }catch(e){document.getElementById('esc-body').innerHTML='<div class="err">'+e.message+'</div>';}
+}
+
+async function saveEditedScores(mid,scoreIdsStr,taId,tbId){
+  st('esc-st','Saving...','info');
+  try{
+    const scores=await get('scores?matchup_id=eq.'+mid+'&order=id');
+    for(const s of scores){
+      const newHoles=[];
+      for(let i=0;i<9;i++){newHoles.push(parseInt(document.getElementById('esc-'+s.id+'-'+i).value)||null);}
+      const gross=newHoles.reduce((t,v)=>t+(v||0),0);
+      await patch('scores?id=eq.'+s.id,{h1:newHoles[0],h2:newHoles[1],h3:newHoles[2],h4:newHoles[3],h5:newHoles[4],h6:newHoles[5],h7:newHoles[6],h8:newHoles[7],h9:newHoles[8],gross_total:gross});
+    }
+    // Rebuild pairs for calcPts
+    const aScores=scores.filter(s=>s.team_id===taId).sort((a,b)=>a.hc_used-b.hc_used);
+    const bScores=scores.filter(s=>s.team_id===tbId).sort((a,b)=>a.hc_used-b.hc_used);
+    const savedPairs=pairs,savedSc=sc;
+    pairs=[{p1:{hc:aScores[0]&&aScores[0].hc_used||0},p2:{hc:bScores[0]&&bScores[0].hc_used||0}},{p1:{hc:aScores[1]&&aScores[1].hc_used||0},p2:{hc:bScores[1]&&bScores[1].hc_used||0}}];
+    sc=[[Array(9).fill(''),Array(9).fill('')],[Array(9).fill(''),Array(9).fill('')]];
+    for(let i=0;i<9;i++){
+      if(aScores[0])sc[0][0][i]=parseInt(document.getElementById('esc-'+aScores[0].id+'-'+i).value)||'';
+      if(bScores[0])sc[0][1][i]=parseInt(document.getElementById('esc-'+bScores[0].id+'-'+i).value)||'';
+      if(aScores[1])sc[1][0][i]=parseInt(document.getElementById('esc-'+aScores[1].id+'-'+i).value)||'';
+      if(bScores[1])sc[1][1][i]=parseInt(document.getElementById('esc-'+bScores[1].id+'-'+i).value)||'';
+    }
+    const newPts=calcPts();
+    pairs=savedPairs;sc=savedSc;
+    const ptsRows=await get('points?matchup_id=eq.'+mid);
+    const pA=ptsRows.find(p=>p.team_id===taId),pB=ptsRows.find(p=>p.team_id===tbId);
+    if(pA)await patch('points?id=eq.'+pA.id,{week_total:newPts.aTotal,hole_points:newPts.aH,individual_points:newPts.aI,team_point:newPts.aT});
+    if(pB)await patch('points?id=eq.'+pB.id,{week_total:newPts.bTotal,hole_points:newPts.bH,individual_points:newPts.bI,team_point:newPts.bT});
+    st('esc-st','Saved! Team '+taId+': '+fmt(newPts.aTotal)+' pts - Team '+tbId+': '+fmt(newPts.bTotal)+' pts','ok');
+    renderLb();
+  }catch(e){st('esc-st','Error: '+e.message,'err');}
+}
+
+document.getElementById('adm-late-wk').addEventListener('change',buildMatchupSetter);
+async function buildMatchupSetter(){
+  const wkNum=parseInt(document.getElementById('adm-late-wk').value);
+  if(!wkNum)return;
+  const el=document.getElementById('adm-matchup-builder');
+  try{
+    const pts=await get('points?select=team_id,week_total');
+    const tot={};pts.forEach(p=>{if(!tot[p.team_id])tot[p.team_id]=0;tot[p.team_id]+=parseFloat(p.week_total)||0;});
+    const ranked=Object.entries(tot).map(([id,t])=>({id:parseInt(id),t})).sort((a,b)=>b.t-a.t);
+    const wk=W.find(w=>w.week_number===wkNum);
+    if(!wk){el.innerHTML='<div class="err">Week not found</div>';return;}
+    const existing=await get('matchups?week_id=eq.'+wk.id);
+    if(existing.length){el.innerHTML='<div class="ok">Matchups already set for Week '+wkNum+'</div><button class="btn2" onclick="clearMatchups('+wk.id+','+wkNum+')" style="margin-top:8px;">Clear and Reset</button>';return;}
+    let html='<div style="font-size:11px;color:#888;margin-bottom:10px;">Current standings - adjust pairings below (suggested: 1 vs 2, 3 vs 4...)</div>';
+    html+='<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;margin-bottom:12px;">';
+    ranked.forEach((r,i)=>{const t=T[r.id];if(!t)return;html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);"><div><span style="font-size:11px;color:#c9a84c;font-weight:700;">#'+(i+1)+'</span> <span style="font-size:12px;color:#fff;">Team '+t.id+' - '+t.player1_name+' & '+t.player2_name+'</span></div><span style="font-size:12px;font-weight:700;color:#c9a84c;">'+fmt(r.t)+'</span></div>';});
+    html+='</div>';
+    for(let i=0;i<Math.floor(ranked.length/2);i++){
+      const a=ranked[i*2]&&ranked[i*2].id,b=ranked[i*2+1]&&ranked[i*2+1].id;
+      if(!a||!b)continue;
+      html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px;">';
+      html+='<select id="mA-'+i+'" class="inp" style="margin:0;">'+ranked.map(r=>'<option value="'+r.id+'"'+(r.id===a?' selected':'')+'>Team '+r.id+' ('+fmt(r.t)+' pts)</option>').join('')+'</select>';
+      html+='<span style="color:#c9a84c;font-weight:700;">VS</span>';
+      html+='<select id="mB-'+i+'" class="inp" style="margin:0;">'+ranked.map(r=>'<option value="'+r.id+'"'+(r.id===b?' selected':'')+'>Team '+r.id+' ('+fmt(r.t)+' pts)</option>').join('')+'</select>';
+      html+='</div>';
+    }
+    html+='<button class="btn" onclick="saveMatchups('+wk.id+','+Math.floor(ranked.length/2)+')">Save Matchups for Week '+wkNum+'</button><div id="matchup-save-st"></div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div class="err">'+e.message+'</div>';}
+}
+
+async function saveMatchups(wkId,count){
+  try{
+    for(let i=0;i<count;i++){
+      const aId=parseInt(document.getElementById('mA-'+i).value);
+      const bId=parseInt(document.getElementById('mB-'+i).value);
+      if(aId===bId){alert('A team cannot play itself! Check matchup '+(i+1));return;}
+      await post('matchups',{week_id:wkId,team_a_id:aId,team_b_id:bId});
+    }
+    document.getElementById('adm-matchup-builder').innerHTML='<div class="ok">Matchups saved for week!</div>';
+  }catch(e){st('matchup-save-st',e.message,'err');}
+}
+
+async function clearMatchups(wkId,wkNum){
+  if(!confirm('Clear all matchups for Week '+wkNum+'?'))return;
+  try{await del('matchups?week_id=eq.'+wkId+'&status=eq.pending');document.getElementById('adm-late-wk').dispatchEvent(new Event('change'));}catch(e){alert('Error: '+e.message);}
+}
+
+async function loadAdmStats(){
+  const el=document.getElementById('adm-stats');
+  try{
+    const[sc2,pts,hcs,sb2]=await Promise.all([get('scores?select=id'),get('points?select=id,week_total'),get('handicaps?select=id'),get('subs?select=id')]);
+    el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+      +[['Score Entries',sc2.length],['Scorecards',Math.floor(pts.length/2)],['HC Updates',hcs.length],['Subs on File',sb2.length]].map(([l,v])=>'<div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:12px;"><div style="font-size:22px;font-weight:700;color:#c9a84c;">'+v+'</div><div style="font-size:10px;color:#888;">'+l+'</div></div>').join('')
+      +'</div>';
+  }catch(e){el.innerHTML='<div class="err">'+e.message+'</div>';}
+}
+
+async function exportData(){
+  const btn=document.getElementById('exp-btn');btn.disabled=true;btn.textContent='Preparing...';
+  try{
+    const[w2,m2,sc2,pts,hcs,sb2]=await Promise.all([get('weeks?order=week_number'),get('matchups?order=id'),get('scores?order=id'),get('points?order=id'),get('handicaps?order=id'),get('subs?order=name')]);
+    const tot={};pts.forEach(p=>{if(!tot[p.team_id])tot[p.team_id]=0;tot[p.team_id]+=parseFloat(p.week_total)||0;});
+    let csv='SEASON STANDINGS\nTeam,Player 1,Player 2,Total Points\n';
+    Object.entries(tot).sort((a,b)=>b[1]-a[1]).forEach(([id,t])=>{const t2=T[id];if(t2)csv+='Team '+id+',"'+t2.player1_name+'","'+t2.player2_name+'",'+t+'\n';});
+    csv+='\nWEEKLY POINTS\nWeek,Date,Team,Week Points\n';
+    pts.forEach(p=>{const mx=m2.find(m=>m.id===p.matchup_id);const w=mx&&w2.find(w=>w.id===mx.week_id);csv+=(w&&w.week_number||'')+','+(w&&w.date||'')+',Team '+p.team_id+','+p.week_total+'\n';});
+    csv+='\nSCORES\nWeek,Date,Team,Player,Sub,HC Used,H1,H2,H3,H4,H5,H6,H7,H8,H9,Gross,Adj Total\n';
+    sc2.forEach(s=>{const mx=m2.find(m=>m.id===s.matchup_id);const w=mx&&w2.find(w=>w.id===mx.week_id);csv+=(w&&w.week_number||'')+','+(w&&w.date||'')+',Team '+s.team_id+',"'+s.player_name+'",'+(s.is_sub?'Yes':'No')+','+s.hc_used+','+(s.h1||'')+','+(s.h2||'')+','+(s.h3||'')+','+(s.h4||'')+','+(s.h5||'')+','+(s.h6||'')+','+(s.h7||'')+','+(s.h8||'')+','+(s.h9||'')+','+(s.gross_total||'')+','+(s.net_total||'')+'\n';});
+    csv+='\nHANDICAPS\nWeek,Team,Player Slot,HC After Week,Gross Score\n';
+    hcs.forEach(h=>{const w=w2.find(w=>w.id===h.week_id);csv+=(w&&w.week_number||'')+',Team '+h.team_id+','+h.player_slot+','+h.hc_after+','+(h.gross_score||'')+'\n';});
+    csv+='\nSUBS\nName,Current HC\n';
+    sb2.forEach(s=>csv+='"'+s.name+'",'+s.hc_start+'\n');
+    const b=new Blob([csv],{type:'text/csv'});
+    const u=URL.createObjectURL(b);
+    const a=document.createElement('a');a.href=u;a.download='PonyHills_2026_'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+    btn.disabled=false;btn.textContent='Download Backup (CSV)';
+    document.getElementById('exp-st').innerHTML='<div class="ok">Downloaded!</div>';
+    setTimeout(()=>document.getElementById('exp-st').innerHTML='',3000);
+  }catch(e){btn.disabled=false;btn.textContent='Download Backup (CSV)';document.getElementById('exp-st').innerHTML='<div class="err">'+e.message+'</div>';}
+}
+
+window.addEventListener('load',init);
 </script>
 </body>
 </html>
