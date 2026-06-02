@@ -54,7 +54,48 @@ body{margin:0;font-family:sans-serif;background:#0a2e12;color:#f8f4e8;min-height
 </div>
 
 <div class="page" id="page-admin">
-  <div class="status info">Admin coming soon</div>
+  <!-- Lock screen -->
+  <div id="admin-lock" style="margin-top:20px;">
+    <div style="text-align:center;padding:30px 20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;">
+      <div style="font-size:36px;margin-bottom:12px;">🔒</div>
+      <div style="font-size:18px;font-weight:700;color:#c9a84c;margin-bottom:6px;">Admin Access</div>
+      <div style="font-size:12px;color:#888;margin-bottom:20px;">Enter password to continue</div>
+      <input type="password" id="admin-pw" placeholder="Password" 
+        style="width:100%;padding:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;text-align:center;margin-bottom:12px;"
+        onkeydown="if(event.key==='Enter')checkPW()">
+      <button onclick="checkPW()" style="width:100%;padding:13px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:15px;font-weight:700;cursor:pointer;">Unlock →</button>
+      <div id="pw-err" style="color:#e74c3c;font-size:12px;margin-top:8px;display:none;">Incorrect password</div>
+    </div>
+  </div>
+
+  <!-- Admin panel -->
+  <div id="admin-panel" style="display:none;margin-top:8px;">
+
+    <!-- Export -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:10px;">📥 Export Data</div>
+      <p style="font-size:12px;color:#888;margin-bottom:14px;">Download all season data as a CSV backup file that opens in Excel.</p>
+      <button onclick="exportData()" id="export-btn" style="width:100%;padding:13px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:14px;font-weight:700;cursor:pointer;">Download Season Backup</button>
+      <div id="export-status" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- Edit Points -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:12px;">✏️ Edit Points</div>
+      <select id="admin-wk" onchange="loadAdminMatchups()" style="width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:14px;margin-bottom:10px;">
+        <option value="">Select week...</option>
+      </select>
+      <div id="admin-matchups"></div>
+    </div>
+
+    <!-- Season Stats -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:15px;font-weight:700;color:#c9a84c;margin-bottom:12px;">📊 Season Stats</div>
+      <div id="admin-stats"><div class="status info">Loading...</div></div>
+    </div>
+
+    <button onclick="lockAdmin()" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:14px;cursor:pointer;">🔒 Lock Admin</button>
+  </div>
 </div>
 
 <script>
@@ -310,54 +351,157 @@ function renderScorecard() {
   let cardHtml = pairs.map((pair, pi) => {
     const p1s = pair.p1.hc > pair.p2.hc ? calcStrokes(pair.p1.hc,pair.p2.hc) : Array(9).fill(0);
     const p2s = pair.p2.hc > pair.p1.hc ? calcStrokes(pair.p2.hc,pair.p1.hc) : Array(9).fill(0);
-    
+    const sc1 = scores[pi][0], sc2 = scores[pi][1];
+
+    // Pre-calculate adj scores and hole winners
+    const adjRow1 = PARS.map((_,h) => {const g=parseInt(sc1[h])||0;return g>0?g-p1s[h]:null;});
+    const adjRow2 = PARS.map((_,h) => {const g=parseInt(sc2[h])||0;return g>0?g-p2s[h]:null;});
+    const holeWinner = PARS.map((_,h) => {
+      const a=adjRow1[h], b=adjRow2[h];
+      if(a===null||b===null) return 'none';
+      if(a<b) return 'p1'; if(b<a) return 'p2'; return 'tie';
+    });
+
+    const holeBg = h => {
+      const w = holeWinner[h];
+      if(w==='p1') return '#1a4a1a';
+      if(w==='p2') return '#1a2a4a';
+      if(w==='tie') return '#3a3a2a';
+      return 'rgba(255,255,255,.04)';
+    };
+    const holeBorder = h => {
+      const w = holeWinner[h];
+      if(w==='p1') return '#2d8a3e';
+      if(w==='p2') return '#2563eb';
+      if(w==='tie') return '#c9a84c';
+      return 'rgba(255,255,255,.1)';
+    };
+
+    const gross1 = sc1.reduce((s,v)=>s+(parseInt(v)||0),0);
+    const gross2 = sc2.reduce((s,v)=>s+(parseInt(v)||0),0);
+    const adj1 = adjRow1.reduce((s,v)=>s+(v!==null?v:0),0);
+    const adj2 = adjRow2.reduce((s,v)=>s+(v!==null?v:0),0);
+
     return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:14px;">
       <div style="padding:8px 12px;background:${pi===0?'linear-gradient(135deg,#1a4a8a,#1a3a6a)':'linear-gradient(135deg,#8a1a1a,#6a1a1a)'};font-size:12px;font-weight:700;color:#fff;">
         ${pi===0?'🔵 Low Match':'🔴 High Match'} · ${pair.p1.name} vs ${pair.p2.name}
       </div>
       <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;min-width:460px;font-size:11px;">
-          <tr style="background:rgba(201,168,76,.08);">
-            <th style="padding:6px 8px;text-align:left;color:#c9a84c;min-width:80px;">Player</th>
-            ${PARS.map((_,h)=>`<th style="padding:6px 3px;text-align:center;color:#c9a84c;">${h+1}</th>`).join('')}
-            <th style="padding:6px 4px;text-align:center;color:#c9a84c;">Tot</th>
-            <th style="padding:6px 4px;text-align:center;color:#c9a84c;">Adj</th>
-            <th style="padding:6px 4px;text-align:center;color:#c9a84c;">Pts</th>
+        <table style="width:100%;border-collapse:collapse;min-width:500px;font-size:11px;">
+
+          <!-- HOLE NUMBER ROW with color coding -->
+          <tr style="background:rgba(0,0,0,.2);">
+            <td style="padding:5px 8px;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;min-width:85px;">Hole</td>
+            ${PARS.map((_,h)=>`<td style="text-align:center;padding:3px 2px;">
+              <div style="width:26px;height:26px;border-radius:6px;background:${holeBg(h)};border:1px solid ${holeBorder(h)};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin:0 auto;">${h+1}</div>
+            </td>`).join('')}
+            <td style="padding:3px 6px;font-size:10px;font-weight:700;color:#888;text-align:center;">Tot</td>
+            <td style="padding:3px 6px;font-size:10px;font-weight:700;color:#888;text-align:center;">Adj</td>
+            <td style="padding:3px 6px;font-size:10px;font-weight:700;color:#888;text-align:center;">Pts</td>
           </tr>
-          <tr style="background:rgba(45,138,62,.06);font-size:10px;">
-            <td style="padding:4px 8px;color:#888;">Par/Yds/HC</td>
-            ${PARS.map((_,h)=>`<td style="text-align:center;padding:2px;"><div style="color:#2d8a3e;font-weight:700;">${PARS[h]}</div><div style="color:#555;font-size:8px;">${YARDS[h]}</div><div style="color:#c9a84c;font-size:8px;">H${HDCPS[h]}</div></td>`).join('')}
-            <td style="text-align:center;color:#2d8a3e;font-weight:700;">${PAR}</td>
+
+          <!-- PAR ROW -->
+          <tr style="background:rgba(45,138,62,.06);">
+            <td style="padding:3px 8px;font-size:9px;color:#2d8a3e;font-weight:700;">Par</td>
+            ${PARS.map(p=>`<td style="text-align:center;font-size:10px;font-weight:700;color:#2d8a3e;padding:2px;">${p}</td>`).join('')}
+            <td style="text-align:center;font-size:10px;font-weight:700;color:#2d8a3e;">${PAR}</td>
             <td></td><td></td>
           </tr>
-          ${[0,1].map(pli => {
-            const p = pli===0?pair.p1:pair.p2;
-            const strks = pli===0?p1s:p2s;
-            const sc = scores[pi][pli];
-            const gross = sc.reduce((s,v)=>s+(parseInt(v)||0),0);
-            const adj = sc.reduce((s,v,h)=>{const g=parseInt(v)||0;return s+(g>0?g-strks[h]:0);},0);
-            return `<tr style="border-top:1px solid rgba(255,255,255,.05);">
-              <td style="padding:8px;">
-                <div style="font-size:11px;font-weight:600;color:#fff;">${p.name}${p.isSub?'<span style="background:#c9a84c;color:#0a2e12;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:4px;">SUB</span>':''}</div>
-                <div style="font-size:10px;color:#c9a84c;">HC ${p.hc}</div>
-                <button onclick="openSub(${pi},${pli})" style="margin-top:3px;padding:2px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.15);background:none;color:#888;font-size:10px;cursor:pointer;">${p.isSub?'✏️ Edit':'🔄 Sub'}</button>
-              </td>
-              ${PARS.map((_,h)=>{
-                const g = sc[h];
-                const gInt = parseInt(g)||0;
-                const s = strks[h];
-                const diff2 = gInt>0?gInt-PARS[h]:0;
-                const bg = gInt>0?(diff2<=-2?'#8B6914':diff2===-1?'#1a5c2a':diff2===0?'#1a3a6a':diff2===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';
-                return `<td style="text-align:center;padding:2px;position:relative;">
-                  ${s>0?`<div style="position:absolute;top:1px;right:1px;width:8px;height:8px;border-radius:50%;background:#c9a84c;font-size:6px;font-weight:700;color:#0a2e12;display:flex;align-items:center;justify-content:center;">${s>1?s:''}</div>`:''}
-                  <button onclick="openStep(${pi},${pli},${h})" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:${bg};color:#fff;font-size:11px;font-weight:700;cursor:pointer;">${g||'·'}</button>
-                </td>`;
-              }).join('')}
-              <td style="text-align:center;font-size:12px;font-weight:700;color:#c9a84c;" id="gt-${pi}-${pli}">${gross||'—'}</td>
-              <td style="text-align:center;font-size:12px;font-weight:700;color:#e8cc7a;" id="at-${pi}-${pli}">${adj||'—'}</td>
-              <td style="text-align:center;font-size:12px;font-weight:700;color:#c9a84c;" id="pt-${pi}-${pli}">—</td>
-            </tr>`;
-          }).join('')}
+
+          <!-- YARDS ROW -->
+          <tr style="background:rgba(0,0,0,.1);">
+            <td style="padding:3px 8px;font-size:9px;color:#555;">Yards</td>
+            ${YARDS.map(y=>`<td style="text-align:center;font-size:9px;color:#555;padding:2px;">${y}</td>`).join('')}
+            <td colspan="3"></td>
+          </tr>
+
+          <!-- HDCP ROW -->
+          <tr style="background:rgba(201,168,76,.04);border-bottom:1px solid rgba(255,255,255,.08);">
+            <td style="padding:3px 8px;font-size:9px;color:#c9a84c;">HDCP</td>
+            ${HDCPS.map(h2=>`<td style="text-align:center;font-size:9px;color:#c9a84c;padding:2px;">${h2}</td>`).join('')}
+            <td colspan="3"></td>
+          </tr>
+
+          <!-- PLAYER 1 GROSS ROW -->
+          <tr style="border-top:2px solid rgba(255,255,255,.1);">
+            <td style="padding:8px 8px 2px;">
+              <div style="font-size:11px;font-weight:600;color:#fff;">${pair.p1.name}${pair.p1.isSub?'<span style="background:#c9a84c;color:#0a2e12;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px;">SUB</span>':''}</div>
+              <div style="font-size:9px;color:#c9a84c;">HC ${pair.p1.hc}</div>
+              <button onclick="openSub(${pi},0)" style="margin-top:2px;padding:2px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.1);background:none;color:#666;font-size:9px;cursor:pointer;">${pair.p1.isSub?'✏️':'🔄'} Sub</button>
+            </td>
+            ${PARS.map((_,h)=>{
+              const g=sc1[h]; const gInt=parseInt(g)||0;
+              const s=p1s[h];
+              const diff2=gInt>0?gInt-PARS[h]:0;
+              const bg=gInt>0?(diff2<=-2?'#8B6914':diff2===-1?'#1a5c2a':diff2===0?'#1a3a6a':diff2===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';
+              return `<td style="text-align:center;padding:2px;position:relative;">
+                ${s>0?`<div style="position:absolute;top:0;right:0;width:8px;height:8px;border-radius:50%;background:#c9a84c;font-size:5px;font-weight:700;color:#0a2e12;display:flex;align-items:center;justify-content:center;z-index:1;">${s>1?s:''}</div>`:''}
+                <button onclick="openStep(${pi},0,${h})" style="width:28px;height:26px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:${bg};color:#fff;font-size:11px;font-weight:700;cursor:pointer;">${g||'·'}</button>
+              </td>`;
+            }).join('')}
+            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="gt-${pi}-0">${gross1||'—'}</td>
+            <td style="text-align:center;font-size:11px;font-weight:700;color:#e8cc7a;padding:2px 4px;" id="at-${pi}-0">${adjRow1.some(v=>v!==null)?adj1:'—'}</td>
+            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="pt-${pi}-0">—</td>
+          </tr>
+
+          <!-- PLAYER 1 ADJ ROW -->
+          <tr style="background:rgba(232,204,122,.04);border-bottom:1px solid rgba(255,255,255,.06);">
+            <td style="padding:2px 8px;font-size:9px;color:#888;">Adj Score</td>
+            ${PARS.map((_,h)=>{
+              const a=adjRow1[h];
+              const w=holeWinner[h];
+              const fc=w==='p1'?'#7ecf8e':w==='tie'?'#c9a84c':'#e8cc7a';
+              return `<td style="text-align:center;font-size:10px;font-weight:700;color:${fc};padding:2px;">${a!==null?a:'·'}</td>`;
+            }).join('')}
+            <td colspan="3"></td>
+          </tr>
+
+          <!-- PLAYER 2 GROSS ROW -->
+          <tr>
+            <td style="padding:8px 8px 2px;">
+              <div style="font-size:11px;font-weight:600;color:#fff;">${pair.p2.name}${pair.p2.isSub?'<span style="background:#c9a84c;color:#0a2e12;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px;">SUB</span>':''}</div>
+              <div style="font-size:9px;color:#c9a84c;">HC ${pair.p2.hc}</div>
+              <button onclick="openSub(${pi},1)" style="margin-top:2px;padding:2px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.1);background:none;color:#666;font-size:9px;cursor:pointer;">${pair.p2.isSub?'✏️':'🔄'} Sub</button>
+            </td>
+            ${PARS.map((_,h)=>{
+              const g=sc2[h]; const gInt=parseInt(g)||0;
+              const s=p2s[h];
+              const diff2=gInt>0?gInt-PARS[h]:0;
+              const bg=gInt>0?(diff2<=-2?'#8B6914':diff2===-1?'#1a5c2a':diff2===0?'#1a3a6a':diff2===1?'#7a3a0a':'#7a1a1a'):'rgba(255,255,255,.05)';
+              return `<td style="text-align:center;padding:2px;position:relative;">
+                ${s>0?`<div style="position:absolute;top:0;right:0;width:8px;height:8px;border-radius:50%;background:#c9a84c;font-size:5px;font-weight:700;color:#0a2e12;display:flex;align-items:center;justify-content:center;z-index:1;">${s>1?s:''}</div>`:''}
+                <button onclick="openStep(${pi},1,${h})" style="width:28px;height:26px;border-radius:5px;border:1px solid rgba(255,255,255,.1);background:${bg};color:#fff;font-size:11px;font-weight:700;cursor:pointer;">${g||'·'}</button>
+              </td>`;
+            }).join('')}
+            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="gt-${pi}-1">${gross2||'—'}</td>
+            <td style="text-align:center;font-size:11px;font-weight:700;color:#e8cc7a;padding:2px 4px;" id="at-${pi}-1">${adjRow2.some(v=>v!==null)?adj2:'—'}</td>
+            <td style="text-align:center;font-size:11px;font-weight:700;color:#c9a84c;padding:2px 4px;" id="pt-${pi}-1">—</td>
+          </tr>
+
+          <!-- PLAYER 2 ADJ ROW -->
+          <tr style="background:rgba(232,204,122,.04);">
+            <td style="padding:2px 8px;font-size:9px;color:#888;">Adj Score</td>
+            ${PARS.map((_,h)=>{
+              const a=adjRow2[h];
+              const w=holeWinner[h];
+              const fc=w==='p2'?'#7ecf8e':w==='tie'?'#c9a84c':'#e8cc7a';
+              return `<td style="text-align:center;font-size:10px;font-weight:700;color:${fc};padding:2px;">${a!==null?a:'·'}</td>`;
+            }).join('')}
+            <td colspan="3"></td>
+          </tr>
+
+          <!-- LEGEND ROW -->
+          <tr style="background:rgba(0,0,0,.15);border-top:1px solid rgba(255,255,255,.06);">
+            <td colspan="12" style="padding:6px 8px;">
+              <div style="display:flex;gap:12px;font-size:9px;align-items:center;">
+                <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:3px;background:#1a4a1a;border:1px solid #2d8a3e;"></div><span style="color:#888;">${pair.p1.name.split(' ')[0]} wins</span></div>
+                <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:3px;background:#1a2a4a;border:1px solid #2563eb;"></div><span style="color:#888;">${pair.p2.name.split(' ')[0]} wins</span></div>
+                <div style="display:flex;align-items:center;gap:4px;"><div style="width:12px;height:12px;border-radius:3px;background:#3a3a2a;border:1px solid #c9a84c;"></div><span style="color:#888;">Tie ½ pt each</span></div>
+                <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#c9a84c;"></div><span style="color:#888;">Stroke given</span></div>
+              </div>
+            </td>
+          </tr>
+
         </table>
       </div>
     </div>`;
@@ -786,6 +930,197 @@ function renderSubsTab() {
     <div style="font-size:15px;font-weight:700;color:#c9a84c;text-align:center;">${s.hc_start}</div>
     <div style="font-size:10px;color:#888;text-align:center;">Available</div>
   </div>`).join('')}`;
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────
+const ADMIN_PW = 'PonyHills2026';
+
+function checkPW() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PW) {
+    document.getElementById('admin-lock').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    document.getElementById('admin-pw').value = '';
+    loadAdminWeeks();
+    loadAdminStats();
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+    document.getElementById('admin-pw').value = '';
+    setTimeout(() => document.getElementById('pw-err').style.display='none', 2000);
+  }
+}
+
+function lockAdmin() {
+  document.getElementById('admin-lock').style.display = 'block';
+  document.getElementById('admin-panel').style.display = 'none';
+}
+
+function loadAdminWeeks() {
+  const sel = document.getElementById('admin-wk');
+  sel.innerHTML = '<option value="">Select week...</option>';
+  WEEKS.filter(w => getStatus(w.date) !== 'upcoming').forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.id;
+    opt.textContent = `Week ${w.week_number} — ${new Date(w.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}`;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadAdminMatchups() {
+  const weekId = document.getElementById('admin-wk').value;
+  if (!weekId) return;
+  const el = document.getElementById('admin-matchups');
+  el.innerHTML = '<div class="status info">Loading...</div>';
+  try {
+    const [matchups, pts] = await Promise.all([
+      get(`matchups?week_id=eq.${weekId}&order=id`),
+      get(`points?week_id=eq.${weekId}`)
+    ]);
+    const fmt = v => v !== undefined && v !== null ? (parseFloat(v)%1===0?parseFloat(v):parseFloat(v).toFixed(1)) : '—';
+    el.innerHTML = matchups.map(m => {
+      const ta=TEAMS[m.team_a_id], tb=TEAMS[m.team_b_id];
+      const pA=pts.find(p=>p.team_id===m.team_a_id&&p.matchup_id===m.id);
+      const pB=pts.find(p=>p.team_id===m.team_b_id&&p.matchup_id===m.id);
+      return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:600;color:#fff;">Team ${m.team_a_id} vs Team ${m.team_b_id}</div>
+          <span style="font-size:10px;color:${m.status==='submitted'?'#2ecc71':'#c9a84c'};">${m.status==='submitted'?'✓ Submitted':'Pending'}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;">
+            <div style="font-size:10px;color:#888;">Team ${m.team_a_id}</div>
+            <div style="font-size:18px;font-weight:700;color:#c9a84c;">${fmt(pA?.week_total)}</div>
+          </div>
+          <div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:8px;">
+            <div style="font-size:10px;color:#888;">Team ${m.team_b_id}</div>
+            <div style="font-size:18px;font-weight:700;color:#c9a84c;">${fmt(pB?.week_total)}</div>
+          </div>
+        </div>
+        <button onclick="editPts(${m.id},${m.team_a_id},${m.team_b_id},'${pA?.id||''}','${pB?.id||''}',${pA?.week_total||0},${pB?.week_total||0})" 
+          style="width:100%;padding:8px;border-radius:8px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:13px;cursor:pointer;">✏️ Edit Points</button>
+      </div>`;
+    }).join('') || '<div style="color:#888;font-size:13px;">No matchups found</div>';
+  } catch(e) {
+    el.innerHTML = `<div class="status err">Error: ${e.message}</div>`;
+  }
+}
+
+function editPts(matchupId, taId, tbId, pAId, pBId, pAVal, pBVal) {
+  const existing = document.getElementById('edit-overlay');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'edit-overlay';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;';
+  div.innerHTML = `<div style="background:#0f3d1a;border:1px solid rgba(201,168,76,.4);border-radius:16px;padding:22px;width:100%;max-width:400px;">
+    <div style="font-size:16px;font-weight:700;color:#c9a84c;margin-bottom:14px;">✏️ Edit Points — Team ${taId} vs Team ${tbId}</div>
+    <div style="font-size:11px;color:#888;margin-bottom:14px;">Total must equal 21 pts</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:10px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">Team ${taId} Pts</div>
+        <input id="edit-a" type="number" min="0" max="21" step="0.5" value="${pAVal}" style="width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px;text-align:center;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">Team ${tbId} Pts</div>
+        <input id="edit-b" type="number" min="0" max="21" step="0.5" value="${pBVal}" style="width:100%;padding:11px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px;text-align:center;">
+      </div>
+    </div>
+    <div id="edit-status" style="margin-bottom:10px;"></div>
+    <button onclick="saveEditPts(${matchupId},${taId},${tbId},'${pAId}','${pBId}')" style="width:100%;padding:13px;border-radius:10px;border:none;background:#c9a84c;color:#0a2e12;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;">Save Changes</button>
+    <button onclick="document.getElementById('edit-overlay').remove()" style="width:100%;padding:11px;border-radius:10px;border:1px solid rgba(201,168,76,.3);background:none;color:#c9a84c;font-size:14px;cursor:pointer;">Cancel</button>
+  </div>`;
+  document.body.appendChild(div);
+}
+
+async function saveEditPts(matchupId, taId, tbId, pAId, pBId) {
+  const pA = parseFloat(document.getElementById('edit-a').value);
+  const pB = parseFloat(document.getElementById('edit-b').value);
+  if (isNaN(pA)||isNaN(pB)) { alert('Enter valid points'); return; }
+  if (Math.abs(pA+pB-21)>0.01) { if (!confirm(`Points total ${pA+pB} not 21. Save anyway?`)) return; }
+  const weekId = document.getElementById('admin-wk').value;
+  try {
+    if (pAId) { await patch(`points?id=eq.${pAId}`, {week_total:pA}); }
+    else { await post('points', {matchup_id:matchupId,week_id:parseInt(weekId),team_id:taId,week_total:pA,hole_points:0,individual_points:0,team_point:0}); }
+    if (pBId) { await patch(`points?id=eq.${pBId}`, {week_total:pB}); }
+    else { await post('points', {matchup_id:matchupId,week_id:parseInt(weekId),team_id:tbId,week_total:pB,hole_points:0,individual_points:0,team_point:0}); }
+    document.getElementById('edit-overlay').remove();
+    loadAdminMatchups();
+    renderStandings();
+  } catch(e) { document.getElementById('edit-status').innerHTML=`<div class="status err">Error: ${e.message}</div>`; }
+}
+
+async function loadAdminStats() {
+  const el = document.getElementById('admin-stats');
+  try {
+    const [scores, pts, hcs, subs2] = await Promise.all([
+      get('scores?select=id'), get('points?select=id,week_total'),
+      get('handicaps?select=id'), get('subs?select=id')
+    ]);
+    const total = pts.reduce((s,p)=>s+(parseFloat(p.week_total)||0),0);
+    el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      ${[['Score Entries',scores.length],['Scorecards',Math.floor(pts.length/2)],['HC Updates',hcs.length],['Subs',subs2.length]].map(([label,val])=>
+        `<div style="text-align:center;background:rgba(255,255,255,.03);border-radius:8px;padding:12px;">
+          <div style="font-size:22px;font-weight:700;color:#c9a84c;">${val}</div>
+          <div style="font-size:10px;color:#888;">${label}</div>
+        </div>`).join('')}
+    </div>`;
+  } catch(e) { el.innerHTML=`<div class="status err">Error: ${e.message}</div>`; }
+}
+
+async function exportData() {
+  const btn = document.getElementById('export-btn');
+  const status = document.getElementById('export-status');
+  btn.disabled=true; btn.textContent='Preparing...';
+  try {
+    const [weeks2,matchups,scores,pts,hcs,subs2] = await Promise.all([
+      get('weeks?order=week_number'), get('matchups?order=id'),
+      get('scores?order=id'), get('points?order=id'),
+      get('handicaps?order=id'), get('subs?order=name')
+    ]);
+    let csv = 'SEASON STANDINGS
+Team,Player 1,Player 2,Season Total
+';
+    const totals={};
+    pts.forEach(p=>{if(!totals[p.team_id])totals[p.team_id]=0;totals[p.team_id]+=parseFloat(p.week_total)||0;});
+    Object.entries(totals).sort((a,b)=>b[1]-a[1]).forEach(([id,tot])=>{
+      const t=TEAMS[id];if(t)csv+=`Team ${id},"${t.player1_name}","${t.player2_name}",${tot}
+`;
+    });
+    csv+='
+WEEKLY POINTS
+Week,Date,Team,Points
+';
+    pts.forEach(p=>{const m=matchups.find(m=>m.id===p.matchup_id);const w=m?weeks2.find(w=>w.id===m.week_id):null;csv+=`${w?.week_number||''},${w?.date||''},Team ${p.team_id},${p.week_total}
+`;});
+    csv+='
+SCORES
+Week,Team,Player,HC,H1,H2,H3,H4,H5,H6,H7,H8,H9,Gross,Adj
+';
+    scores.forEach(s=>{const m=matchups.find(m=>m.id===s.matchup_id);const w=m?weeks2.find(w=>w.id===m.week_id):null;csv+=`${w?.week_number||''},Team ${s.team_id},"${s.player_name}",${s.hc_used},${s.h1||''},${s.h2||''},${s.h3||''},${s.h4||''},${s.h5||''},${s.h6||''},${s.h7||''},${s.h8||''},${s.h9||''},${s.gross_total||''},${s.net_total||''}
+`;});
+    csv+='
+HANDICAPS
+Week,Team,Slot,HC After,Gross
+';
+    hcs.forEach(h=>{const w=weeks2.find(w=>w.id===h.week_id);csv+=`${w?.week_number||''},Team ${h.team_id},${h.player_slot},${h.hc_after},${h.gross_score||''}
+`;});
+    csv+='
+SUBS
+Name,Current HC
+';
+    subs2.forEach(s=>csv+=`"${s.name}",${s.hc_start}
+`);
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`PonyHills_2026_Backup_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    btn.disabled=false;btn.textContent='Download Season Backup';
+    status.innerHTML='<div class="status ok">✓ Downloaded!</div>';
+    setTimeout(()=>status.innerHTML='',3000);
+  } catch(e) {
+    btn.disabled=false;btn.textContent='Download Season Backup';
+    status.innerHTML=`<div class="status err">Error: ${e.message}</div>`;
+  }
 }
 
 // ── START ─────────────────────────────────────────────────────────
