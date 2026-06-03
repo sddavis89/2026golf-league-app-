@@ -264,20 +264,50 @@ async function viewCard(mid,taId,tbId){
 }
 
 async function getHC(tid,slot){
-  // Only use HC entries from weeks BEFORE the selected week
-  // Get all HC entries for this player, then filter by week_number
   try{
-    const allHCs=await get('handicaps?team_id=eq.'+tid+'&player_slot=eq.'+slot+'&order=week_id.desc');
+    // Get all HC entries for this team before this week
+    // Use week_number directly via join to avoid W array dependency
+    const allHCs=await get('handicaps?team_id=eq.'+tid+'&order=week_id.asc');
     if(allHCs&&allHCs.length){
-      // Find the week_number for each HC entry and filter to only weeks before selW
-      const validHCs=allHCs.filter(h=>{
-        const hcWeek=W.find(w=>w.id===h.week_id);
-        return hcWeek && hcWeek.week_number < selW.week_number;
-      });
-      if(validHCs.length) return validHCs[0].hc_after;
+      // Filter to weeks before selected week using week_id directly
+      // Since weeks.id matches week_number (id=1=week1, id=2=week2 etc)
+      const validHCs=allHCs.filter(h=>h.week_id < selW.id);
+      if(validHCs.length){
+        // Sort descending to get most recent first
+        validHCs.sort((a,b)=>b.week_id-a.week_id);
+        // Try exact slot match first
+        const slotMatch=validHCs.find(h=>h.player_slot===slot);
+        if(slotMatch) return slotMatch.hc_after;
+        // Fall back to other slot if needed
+        return validHCs[0].hc_after;
+      }
+    }
+  }catch(e){console.log('getHC error:',e);}
+  const t=T[tid];return slot==='p1'?t.player1_hc_start:t.player2_hc_start;
+}
+
+async function getHCByName(tid, playerName){
+  // Look up HC by player name stored in scores table
+  try{
+    const allScores=await get('scores?team_id=eq.'+tid+'&player_name=eq.'+encodeURIComponent(playerName)+'&order=id.desc&limit=1');
+    if(allScores&&allScores.length){
+      // Get the matchup week for this score
+      const matchup=await get('matchups?id=eq.'+allScores[0].matchup_id+'&select=week_id');
+      if(matchup&&matchup.length){
+        const scoreWeek=W.find(w=>w.id===matchup[0].week_id);
+        if(scoreWeek && scoreWeek.week_number < selW.week_number){
+          // Get HC saved after that week
+          const hcs=await get('handicaps?team_id=eq.'+tid+'&order=week_id.desc');
+          const validHCs=hcs.filter(h=>{
+            const hw=W.find(w=>w.id===h.week_id);
+            return hw && hw.week_number < selW.week_number;
+          });
+          if(validHCs.length) return validHCs[0].hc_after;
+        }
+      }
     }
   }catch(e){}
-  const t=T[tid];return slot==='p1'?t.player1_hc_start:t.player2_hc_start;
+  return null;
 }
 
 async function openMatchup(mid,taId,tbId){
