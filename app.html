@@ -264,7 +264,11 @@ async function viewCard(mid,taId,tbId){
 }
 
 async function getHC(tid,slot){
-  try{const r=await get('handicaps?team_id=eq.'+tid+'&player_slot=eq.'+slot+'&order=week_id.desc&limit=1');if(r&&r.length)return r[0].hc_after;}catch(e){}
+  // Only use HC entries BEFORE the selected week so past scorecards use correct HCs
+  try{
+    const r=await get('handicaps?team_id=eq.'+tid+'&player_slot=eq.'+slot+'&week_id=lt.'+selW.id+'&order=week_id.desc&limit=1');
+    if(r&&r.length)return r[0].hc_after;
+  }catch(e){}
   const t=T[tid];return slot==='p1'?t.player1_hc_start:t.player2_hc_start;
 }
 
