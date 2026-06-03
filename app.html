@@ -264,10 +264,18 @@ async function viewCard(mid,taId,tbId){
 }
 
 async function getHC(tid,slot){
-  // Only use HC entries BEFORE the selected week so past scorecards use correct HCs
+  // Only use HC entries from weeks BEFORE the selected week
+  // Get all HC entries for this player, then filter by week_number
   try{
-    const r=await get('handicaps?team_id=eq.'+tid+'&player_slot=eq.'+slot+'&week_id=lt.'+selW.id+'&order=week_id.desc&limit=1');
-    if(r&&r.length)return r[0].hc_after;
+    const allHCs=await get('handicaps?team_id=eq.'+tid+'&player_slot=eq.'+slot+'&order=week_id.desc');
+    if(allHCs&&allHCs.length){
+      // Find the week_number for each HC entry and filter to only weeks before selW
+      const validHCs=allHCs.filter(h=>{
+        const hcWeek=W.find(w=>w.id===h.week_id);
+        return hcWeek && hcWeek.week_number < selW.week_number;
+      });
+      if(validHCs.length) return validHCs[0].hc_after;
+    }
   }catch(e){}
   const t=T[tid];return slot==='p1'?t.player1_hc_start:t.player2_hc_start;
 }
